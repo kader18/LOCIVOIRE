@@ -1,0 +1,7 @@
+# Exemple de configuration pour signature release Android
+# Copiez vers android/key.properties (ne pas versionner)
+
+storePassword=CHANGEZ_MOI
+keyPassword=CHANGEZ_MOI
+keyAlias=locivoire
+storeFile=../locivoire-release.keystore

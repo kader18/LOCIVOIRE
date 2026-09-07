@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visite 3D - {{ room.name }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script>
+AFRAME.registerComponent('hover-glow', {
+    init: function () {
+        var el = this.el;
+        el.addEventListener('mouseenter', function () {
+            el.setAttribute('animation__hover', 'property: scale; to: 1.08 1.08 1.08; dur: 200; easing: easeOutQuad');
+        });
+        el.addEventListener('mouseleave', function () {
+            el.setAttribute('animation__hover', 'property: scale; to: 1 1 1; dur: 200; easing: easeOutQuad');
+        });
+    }
+});
+AFRAME.registerComponent('nav-click', {
+    schema: {
+        to: {type: 'string', default: ''},
+        info: {type: 'string', default: ''}
+    },
+    init: function () {
+        var data = this.data;
+        this.el.addEventListener('click', function () {
+            if (data.info) { showInfo(data.info); }
+            if (data.to) {
+                var p = data.to.split(',').map(Number);
+                moveCam(p[0], p[1], p[2], p[3], p[4], p[5]);
+            }
+        });
+    }
+});
+AFRAME.registerComponent('scroll-zoom', {
+    init: function () {
+        var cam = this.el;
+        var canvas = cam.sceneEl.canvas;
+        function onWheel(e) {
+            e.preventDefault();
+            var pos = cam.getAttribute('position');
+            var rot = cam.getAttribute('rotation');
+            var rx = THREE.MathUtils.degToRad(rot.x);
+            var ry = THREE.MathUtils.degToRad(rot.y);
+            var speed = e.deltaY > 0 ? -1.2 : 1.2;
+            pos.x -= Math.sin(ry) * Math.cos(rx) * speed;
+            pos.y += Math.sin(rx) * speed;
+            pos.z -= Math.cos(ry) * Math.cos(rx) * speed;
+            cam.setAttribute('position', pos);
+        }
+        this.onWheel = onWheel;
+        if (canvas) {
+            canvas.addEventListener('wheel', onWheel, {passive: false});
+        } else {
+            cam.sceneEl.addEventListener('loaded', function () {
+                cam.sceneEl.canvas.addEventListener('wheel', onWheel, {passive: false});
+            });
+        }
+    },
+    remove: function () {
+        var canvas = this.el.sceneEl.canvas;
+        if (canvas) canvas.removeEventListener('wheel', this.onWheel);
+    }
+});
+</script>
+<style>
+    .ar-demo-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem 0;
+        color: white;
+    }
+    .ar-header { text-align: center; margin-bottom: 3rem; }
+    .ar-viewer-wrapper {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+        margin-bottom: 2rem;
+    }
+    .ar-viewer {
+        width: 100%;
+        height: 75vh;
+        min-height: 600px;
+        border-radius: 15px;
+        overflow: hidden;
+        background: #000;
+        position: relative;
+    }
+    .ar-instructions {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+    }
+    .ar-controls {
+        display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;
+    }
+    .btn-ar {
+        padding: 1rem 2rem;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid white;
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+    }
+    .btn-ar:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-2px); }
+    #info-panel {
+        display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 12px;
+        font-size: 0.95rem; z-index: 100; max-width: 90%; text-align: center;
+        backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);
+        animation: fadeInUp 0.3s ease; pointer-events: none;
+    }
+    #info-panel .info-title { font-weight: 700; font-size: 1.05rem; color: #FFD54F; }
+    #info-panel .info-desc { margin-top: 4px; opacity: 0.9; }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    #click-hint {
+        position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.7); color: white; padding: 8px 18px; border-radius: 20px;
+        font-size: 0.82rem; z-index: 100; pointer-events: none; white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ar-demo-container">
+    <div class="container">
+        <div class="ar-header">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-vr-cardboard me-3"></i>Visite 3D - {{ room.get_room_type_display }}
+            </h1>
+            <h2 class="mb-4">{{ room.name }}</h2>
+            <p class="lead">Cliquez sur les meubles pour decouvrir leurs details</p>
+        </div>
+
+        <div class="ar-instructions">
+            <h4><i class="fas fa-gamepad me-2"></i>Controles</h4>
+            <ol>
+                <li><strong>Souris : Cliquez + glissez</strong> pour regarder autour</li>
+                <li><strong>Clic sur un objet</strong> pour voir ses details</li>
+                <li><strong>Clavier : Z/Q/S/D</strong> pour vous deplacer dans la piece</li>
+                <li><strong>Boutons</strong> pour les vues predefinies</li>
+            </ol>
+        </div>
+
+        <div class="ar-viewer-wrapper">
+            <div class="ar-viewer">
+                <a-scene
+                    embedded
+                    vr-mode-ui="enabled: false"
+                    renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true;"
+                    style="width: 100%; height: 100%;">
+
+                    <a-entity id="camera" camera="fov: 70" look-controls="enabled: true"
+                              wasd-controls="enabled: true; acceleration: 15;"
+                              scroll-zoom
+                              position="0 3.5 5">
+                        <a-entity cursor="fuse: false; rayOrigin: mouse;"
+                                  raycaster="objects: .clickable; far: 30;"></a-entity>
+                    </a-entity>
+
+                    <a-light type="ambient" color="#FFFFFF" intensity="0.65"></a-light>
+                    <a-light type="directional" position="2 4 2" intensity="0.5" color="#FFF5E0"></a-light>
+                    <a-light type="point" position="0 2.5 0" intensity="0.4" color="#FFFFEE"></a-light>
+
+                    <a-sky color="#E8F4F8" radius="50"></a-sky>
+
+                    <a-entity id="floating-room" position="0 0 0">
+
+                        <!-- SOL de la piece -->
+                        {% if room.room_type == 'bathroom' %}
+                            <a-box position="0 0.02 0" width="4" height="0.04" depth="3.5" color="#D6E4E8"></a-box>
+                        {% elif room.room_type == 'kitchen' %}
+                            <a-box position="0 0.02 0" width="4" height="0.04" depth="3.5" color="#E8DFD0"></a-box>
+                        {% else %}
+                            <a-box position="0 0.02 0" width="4" height="0.04" depth="3.5" color="#D2A679"></a-box>
+                        {% endif %}
+
+                        <!-- MURS -->
+                        <a-box position="0 1.5 -1.75" width="4" height="3" depth="0.1" color="#F5F0E8"></a-box>
+                        <a-box position="-2 1.5 0" width="0.1" height="3" depth="3.5" color="#F0EBE0"></a-box>
+                        <a-box position="2 1.5 0" width="0.1" height="3" depth="3.5" color="#F0EBE0"></a-box>
+                        <a-box position="-1.3 1.5 1.75" width="1.4" height="3" depth="0.1" color="#F5F0E8"></a-box>
+                        <a-box position="1.3 1.5 1.75" width="1.4" height="3" depth="0.1" color="#F5F0E8"></a-box>
+                        <a-box position="0 2.7 1.75" width="1.2" height="0.6" depth="0.1" color="#F5F0E8"></a-box>
+
+                        <!-- PLAFOND transparent -->
+                        <a-box position="0 3.05 0" width="4.2" height="0.05" depth="3.7" color="#F5F5F5" opacity="0.2"></a-box>
+
+                        <!-- Fenetre mur gauche -->
+                        <a-box position="-1.94 1.8 -0.5" width="0.03" height="0.9" depth="0.8" color="#A8D8EA" opacity="0.5"></a-box>
+
+                        <!-- Porte - CLIQUABLE -->
+                        <a-box position="0 1.05 1.72" width="0.8" height="2.1" depth="0.08" color="#6D3A1F"
+                               class="clickable" hover-glow nav-click="to: 0,1.6,0,0,0,0; info: PORTE|Porte en bois massif - Acces au couloir"></a-box>
+                        <a-sphere position="0.25 1.0 1.78" radius="0.04" color="#C0A060"></a-sphere>
+
+                        {% if room.room_type == 'bedroom' %}
+                            <!-- ======= CHAMBRE DETAILLEE ======= -->
+                            <!-- Lit double - CLIQUABLE -->
+                            <a-box position="0 0.22 -0.8" width="1.8" height="0.35" depth="2.2" color="#5C3A21"
+                                   class="clickable" hover-glow nav-click="to: 0,1.6,-0.2,0,180,0; info: LIT DOUBLE|Lit 160x200 en bois massif - Matelas a memoire de forme inclus"></a-box>
+                            <a-box position="0 0.8 -1.65" width="1.8" height="0.8" depth="0.08" color="#4A2F17"></a-box>
+                            <a-box position="0 0.45 -0.8" width="1.6" height="0.15" depth="2" color="#FFFFFF"></a-box>
+                            <a-box position="0 0.55 -0.4" width="1.5" height="0.05" depth="1.2" color="#4A90D9"></a-box>
+                            <a-box position="-0.4 0.58 -1.4" width="0.5" height="0.1" depth="0.35" color="#FFFDE7"></a-box>
+                            <a-box position="0.4 0.58 -1.4" width="0.5" height="0.1" depth="0.35" color="#FFFDE7"></a-box>
+
+                            <!-- Table de chevet gauche - CLIQUABLE -->
+                            <a-box position="-1.3 0.3 -1.2" width="0.5" height="0.55" depth="0.4" color="#8B6F47"
+                                   class="clickable" hover-glow nav-click="info: TABLE DE CHEVET|Table de nuit en bois avec lampe et reveil digital"></a-box>
+                            <a-cylinder position="-1.3 0.65 -1.2" radius="0.04" height="0.2" color="#333333"></a-cylinder>
+                            <a-cone position="-1.3 0.85 -1.2" radius-bottom="0.15" radius-top="0.05" height="0.2" color="#FFE082"></a-cone>
+                            <a-box position="-1.1 0.6 -1.0" width="0.1" height="0.08" depth="0.05" color="#333333"></a-box>
+
+                            <!-- Table de chevet droite - CLIQUABLE -->
+                            <a-box position="1.3 0.3 -1.2" width="0.5" height="0.55" depth="0.4" color="#8B6F47"
+                                   class="clickable" hover-glow nav-click="info: TABLE DE CHEVET|Table de nuit avec livre et rangement"></a-box>
+                            <a-box position="1.3 0.6 -1.2" width="0.15" height="0.03" depth="0.2" color="#C62828"></a-box>
+
+                            <!-- Armoire - CLIQUABLE -->
+                            <a-box position="1.5 1.0 0.5" width="0.8" height="2" depth="0.55" color="#6D4C2A"
+                                   class="clickable" hover-glow nav-click="info: ARMOIRE|Grande armoire 2 portes en bois massif - Penderie et etageres"></a-box>
+                            <a-box position="1.5 1.0 0.78" width="0.76" height="1.9" depth="0.02" color="#7D5C3A"></a-box>
+                            <a-sphere position="1.35 1.0 0.8" radius="0.03" color="#C0A060"></a-sphere>
+                            <a-sphere position="1.65 1.0 0.8" radius="0.03" color="#C0A060"></a-sphere>
+
+                            <!-- Commode - CLIQUABLE -->
+                            <a-box position="-1.5 0.4 0.5" width="0.8" height="0.8" depth="0.45" color="#8B6F47"
+                                   class="clickable" hover-glow nav-click="info: COMMODE|Commode 3 tiroirs en bois - Rangement supplementaire"></a-box>
+                            <a-cylinder position="-1.5 0.6 0.74" radius="0.02" height="0.12" color="#C0A060" rotation="0 0 90"></a-cylinder>
+                            <a-cylinder position="-1.5 0.35 0.74" radius="0.02" height="0.12" color="#C0A060" rotation="0 0 90"></a-cylinder>
+
+                            <!-- Tapis -->
+                            <a-box position="0 0.04 0" width="2" height="0.02" depth="1.2" color="#9C6B30" opacity="0.8"></a-box>
+
+                        {% elif room.room_type == 'living_room' %}
+                            <!-- ======= SALON DETAILLE ======= -->
+                            <!-- Canape - CLIQUABLE -->
+                            <a-box position="0 0.3 -1" width="2.2" height="0.45" depth="0.8" color="#3E6B89"
+                                   class="clickable" hover-glow nav-click="to: 0,1.6,-0.3,0,180,0; info: CANAPE 3 PLACES|Canape confortable en tissu bleu - Places assises pour 3 personnes"></a-box>
+                            <a-box position="0 0.65 -1.35" width="2.2" height="0.4" depth="0.15" color="#345A73"></a-box>
+                            <a-box position="-1.05 0.45 -1" width="0.15" height="0.3" depth="0.8" color="#345A73"></a-box>
+                            <a-box position="1.05 0.45 -1" width="0.15" height="0.3" depth="0.8" color="#345A73"></a-box>
+                            <a-box position="-0.4 0.58 -0.9" width="0.5" height="0.12" depth="0.35" color="#FFB74D"></a-box>
+                            <a-box position="0.4 0.58 -0.9" width="0.5" height="0.12" depth="0.35" color="#E57373"></a-box>
+
+                            <!-- Table basse - CLIQUABLE -->
+                            <a-box position="0 0.28 0" width="1" height="0.04" depth="0.5" color="#5D4037"
+                                   class="clickable" hover-glow nav-click="info: TABLE BASSE|Table basse en bois d'acajou - Style contemporain"></a-box>
+                            <a-cylinder position="-0.4 0.14 -0.2" radius="0.03" height="0.24" color="#4E342E"></a-cylinder>
+                            <a-cylinder position="0.4 0.14 -0.2" radius="0.03" height="0.24" color="#4E342E"></a-cylinder>
+                            <a-cylinder position="-0.4 0.14 0.2" radius="0.03" height="0.24" color="#4E342E"></a-cylinder>
+                            <a-cylinder position="0.4 0.14 0.2" radius="0.03" height="0.24" color="#4E342E"></a-cylinder>
+
+                            <!-- TV - CLIQUABLE -->
+                            <a-box position="0 0.35 1.2" width="1.6" height="0.5" depth="0.35" color="#5D4037"></a-box>
+                            <a-box position="0 1.0 1.15" width="1.5" height="0.85" depth="0.06" color="#1A1A2E"
+                                   class="clickable" hover-glow nav-click="info: TELEVISION|Smart TV LED 55 pouces - Canaux TNT + streaming inclus"></a-box>
+                            <a-box position="0 1.0 1.12" width="1.4" height="0.75" depth="0.01" color="#2E86C1" opacity="0.8"></a-box>
+
+                            <!-- Fauteuil - CLIQUABLE -->
+                            <a-box position="-1.5 0.25 0" width="0.7" height="0.35" depth="0.7" color="#795548"
+                                   class="clickable" hover-glow nav-click="info: FAUTEUIL|Fauteuil d'appoint en cuir marron - Confort premium"></a-box>
+                            <a-box position="-1.5 0.55 -0.3" width="0.7" height="0.4" depth="0.1" color="#6D4C41"></a-box>
+
+                            <!-- Tapis -->
+                            <a-box position="0 0.04 -0.2" width="2.5" height="0.02" depth="2" color="#7E5835" opacity="0.7"></a-box>
+
+                            <!-- Etagere - CLIQUABLE -->
+                            <a-box position="1.7 1.5 -0.5" width="0.25" height="0.03" depth="0.6" color="#8B6F47"
+                                   class="clickable" hover-glow nav-click="info: ETAGERE|Etagere murale en bois - Pour livres et decoration"></a-box>
+                            <a-box position="1.7 1.0 -0.5" width="0.25" height="0.03" depth="0.6" color="#8B6F47"></a-box>
+
+                        {% elif room.room_type == 'kitchen' %}
+                            <!-- ======= CUISINE DETAILLEE ======= -->
+                            <!-- Plan de travail - CLIQUABLE -->
+                            <a-box position="0 0.9 -1.3" width="3.5" height="0.05" depth="0.6" color="#A0A0A0"
+                                   class="clickable" hover-glow nav-click="info: PLAN DE TRAVAIL|Plan de travail en granit gris 3.5m - Rangements integres en dessous"></a-box>
+                            <a-box position="0 0.45 -1.3" width="3.4" height="0.85" depth="0.55" color="#F5F0E0"></a-box>
+                            <!-- Evier - CLIQUABLE -->
+                            <a-box position="-0.5 0.88 -1.3" width="0.6" height="0.12" depth="0.4" color="#D0D0D0"
+                                   class="clickable" hover-glow nav-click="info: EVIER|Evier inox double bac avec robinet mitigeur col de cygne"></a-box>
+                            <a-cylinder position="-0.5 1.1 -1.5" radius="0.02" height="0.3" color="#C0C0C0"></a-cylinder>
+                            <!-- Cuisiniere - CLIQUABLE -->
+                            <a-box position="1.0 0.45 -1.3" width="0.7" height="0.85" depth="0.55" color="#E0E0E0"
+                                   class="clickable" hover-glow nav-click="info: CUISINIERE|Cuisiniere a gaz 4 feux avec four electrique integre"></a-box>
+                            <a-cylinder position="0.85 0.93 -1.2" radius="0.1" height="0.02" color="#222222"></a-cylinder>
+                            <a-cylinder position="1.15 0.93 -1.2" radius="0.1" height="0.02" color="#222222"></a-cylinder>
+                            <a-cylinder position="0.85 0.93 -1.45" radius="0.08" height="0.02" color="#222222"></a-cylinder>
+                            <a-cylinder position="1.15 0.93 -1.45" radius="0.08" height="0.02" color="#222222"></a-cylinder>
+
+                            <!-- Refrigerateur - CLIQUABLE -->
+                            <a-box position="-1.5 1.0 -1.0" width="0.7" height="2" depth="0.65" color="#E8E8E8"
+                                   class="clickable" hover-glow nav-click="info: REFRIGERATEUR|Refrigerateur-congelateur 300L double porte - Classe A+"></a-box>
+                            <a-cylinder position="-1.18 1.3 -0.67" radius="0.02" height="0.4" color="#B0B0B0"></a-cylinder>
+
+                            <!-- Table - CLIQUABLE -->
+                            <a-box position="0 0.72 0.5" width="1.2" height="0.04" depth="0.8" color="#A0724A"
+                                   class="clickable" hover-glow nav-click="info: TABLE A MANGER|Table en bois pour 2 personnes - Ideal pour les repas"></a-box>
+                            <a-cylinder position="-0.5 0.36 0.15" radius="0.03" height="0.68" color="#8B5E3C"></a-cylinder>
+                            <a-cylinder position="0.5 0.36 0.15" radius="0.03" height="0.68" color="#8B5E3C"></a-cylinder>
+                            <a-cylinder position="-0.5 0.36 0.85" radius="0.03" height="0.68" color="#8B5E3C"></a-cylinder>
+                            <a-cylinder position="0.5 0.36 0.85" radius="0.03" height="0.68" color="#8B5E3C"></a-cylinder>
+                            <!-- Chaises -->
+                            <a-box position="-0.6 0.33 0.5" width="0.35" height="0.04" depth="0.35" color="#6D4C41"></a-box>
+                            <a-box position="-0.6 0.55 0.33" width="0.35" height="0.45" depth="0.04" color="#6D4C41"></a-box>
+                            <a-box position="0.6 0.33 0.5" width="0.35" height="0.04" depth="0.35" color="#6D4C41"></a-box>
+                            <a-box position="0.6 0.55 0.67" width="0.35" height="0.45" depth="0.04" color="#6D4C41"></a-box>
+
+                            <!-- Placards hauts - CLIQUABLE -->
+                            <a-box position="0 2.2 -1.5" width="2.5" height="0.6" depth="0.35" color="#D2B48C"
+                                   class="clickable" hover-glow nav-click="info: PLACARDS MURAUX|Placards hauts de rangement - Vaisselle et ustensiles"></a-box>
+
+                        {% elif room.room_type == 'bathroom' %}
+                            <!-- ======= SALLE DE BAIN DETAILLEE ======= -->
+                            <!-- Cabine douche - CLIQUABLE -->
+                            <a-box position="-1.2 1.0 -1" width="1.2" height="2" depth="1.2" color="#E8F4F8" opacity="0.15"
+                                   class="clickable" hover-glow nav-click="info: DOUCHE ITALIENNE|Cabine en verre trempe avec pommeau effet pluie et douchette"></a-box>
+                            <a-box position="-1.75 1.0 -1" width="0.03" height="2" depth="1.2" color="#C8E6F0" opacity="0.4"></a-box>
+                            <a-box position="-1.2 1.0 -1.55" width="1.2" height="2" depth="0.03" color="#E0EEF2" opacity="0.4"></a-box>
+                            <a-box position="-1.2 0.12 -1" width="1.1" height="0.1" depth="1.1" color="#F0F0F0"></a-box>
+                            <a-cylinder position="-1.2 2.2 -1.5" radius="0.02" height="0.5" color="#C0C0C0"></a-cylinder>
+                            <a-sphere position="-1.2 2.45 -1.5" radius="0.08" color="#D0D0D0"></a-sphere>
+                            <a-cylinder position="-1.2 1.2 -1.53" radius="0.03" height="0.15" color="#C0C0C0" rotation="90 0 0"></a-cylinder>
+
+                            <!-- Lavabo - CLIQUABLE -->
+                            <a-box position="0.5 0.85 -1.3" width="0.8" height="0.08" depth="0.5" color="#FFFFFF"
+                                   class="clickable" hover-glow nav-click="info: LAVABO|Vasque en ceramique blanche avec robinet mitigeur chrome"></a-box>
+                            <a-cylinder position="0.5 0.45 -1.3" radius="0.06" height="0.8" color="#FFFFFF"></a-cylinder>
+                            <a-cylinder position="0.5 1.05 -1.5" radius="0.02" height="0.3" color="#C0C0C0"></a-cylinder>
+                            <a-cylinder position="0.5 1.2 -1.4" radius="0.02" height="0.2" color="#C0C0C0" rotation="90 0 0"></a-cylinder>
+                            <!-- Miroir - CLIQUABLE -->
+                            <a-box position="0.5 1.6 -1.68" width="0.7" height="0.9" depth="0.03" color="#C8E8F8" opacity="0.7"
+                                   class="clickable" hover-glow nav-click="info: MIROIR|Miroir mural avec cadre en aluminium - Eclairage LED integre"></a-box>
+                            <a-box position="0.5 1.6 -1.69" width="0.75" height="0.95" depth="0.02" color="#C0C0C0"></a-box>
+
+                            <!-- Toilettes - CLIQUABLE -->
+                            <a-box position="1.3 0.28 -0.3" width="0.4" height="0.45" depth="0.6" color="#FFFFFF"
+                                   class="clickable" hover-glow nav-click="info: TOILETTES|WC suspendu avec chasse d'eau double debit - Economique"></a-box>
+                            <a-box position="1.3 0.55 -0.04" width="0.35" height="0.35" depth="0.12" color="#F5F5F5"></a-box>
+                            <a-box position="1.3 0.52 -0.3" width="0.38" height="0.04" depth="0.45" color="#F0F0F0"></a-box>
+
+                            <!-- Porte-serviette - CLIQUABLE -->
+                            <a-cylinder position="1.85 1.2 0.5" radius="0.02" height="0.6" color="#C0C0C0" rotation="0 0 90"></a-cylinder>
+                            <a-box position="1.85 1.05 0.5" width="0.03" height="0.3" depth="0.5" color="#5DADE2"
+                                   class="clickable" hover-glow nav-click="info: SERVIETTE|Serviette de bain fournie - Porte-serviette mural chrome"></a-box>
+
+                            <!-- Tapis de bain -->
+                            <a-box position="0 0.04 0.5" width="0.8" height="0.02" depth="0.5" color="#81D4FA" opacity="0.7"></a-box>
+
+                        {% else %}
+                            <!-- ======= PIECE GENERIQUE ======= -->
+                            <a-box position="0 0.3 -0.5" width="1.5" height="0.5" depth="0.8" color="#795548"
+                                   class="clickable" hover-glow nav-click="info: MEUBLE|Mobilier de la piece"></a-box>
+                            <a-box position="0 0.55 -0.85" width="1.5" height="0.4" depth="0.1" color="#6D4C41"></a-box>
+                            <a-box position="0 0.28 0.5" width="1" height="0.04" depth="0.5" color="#5D4037"
+                                   class="clickable" hover-glow nav-click="info: TABLE|Table d'appoint"></a-box>
+                        {% endif %}
+
+                        <!-- Label piece -->
+                        <a-text value="{{ room.name }}" position="0 3.5 0" align="center" color="#FFFFFF" scale="1.5 1.5 1.5" width="8"></a-text>
+                        <a-text value="{{ room.get_room_type_display }} {% if room.area %}- {{ room.area }} m2{% endif %}" position="0 3.1 0" align="center" color="#FFD700" scale="1.2 1.2 1.2" width="10"></a-text>
+
+                    </a-entity>
+                </a-scene>
+                <div id="click-hint"><i class="fas fa-mouse-pointer"></i> Cliquez sur les meubles pour voir les details</div>
+                <div id="info-panel">
+                    <div class="info-title" id="info-title"></div>
+                    <div class="info-desc" id="info-desc"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ar-controls">
+            <button class="btn-ar" onclick="resetView()"><i class="fas fa-redo me-2"></i>Reinitialiser</button>
+            <button class="btn-ar" onclick="viewFromTop()"><i class="fas fa-eye me-2"></i>Vue dessus</button>
+            <button class="btn-ar" onclick="viewInside()"><i class="fas fa-door-open me-2"></i>Vue interieure</button>
+            <button class="btn-ar" onclick="rotateRoom()"><i class="fas fa-sync me-2"></i>Rotation</button>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <div class="ar-instructions">
+                    <h4><i class="fas fa-door-open me-2"></i>Details de la chambre</h4>
+                    <p><strong>Type:</strong> {{ room.get_room_type_display }}</p>
+                    <p><strong>Etage:</strong> {{ room.floor_number }}</p>
+                    {% if room.area %}
+                        <p><strong>Superficie:</strong> {{ room.area }} m2</p>
+                    {% endif %}
+                    <p><strong>Propriete:</strong> {{ property.title }}</p>
+                    {% if room.description %}
+                        <p><strong>Description:</strong> {{ room.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="ar-instructions">
+                    <h4><i class="fas fa-lightbulb me-2"></i>Astuces</h4>
+                    <ul>
+                        <li>Cliquez sur un meuble pour voir ses details</li>
+                        <li>Cliquez et glissez pour changer l'angle de vue</li>
+                        <li>Touches Z/Q/S/D pour vous deplacer</li>
+                        <li>Entrez dans la piece avec "Vue interieure"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="{% url 'properties:room_detail' property.pk room.pk %}" class="btn btn-light btn-lg me-3">
+                <i class="fas fa-arrow-left me-2"></i>Retour a la chambre
+            </a>
+            <a href="{% url 'properties:property_detail' property.pk %}" class="btn btn-light btn-lg">
+                <i class="fas fa-home me-2"></i>Retour a la propriete
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+var roomRotation = 0;
+var infoTimer;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() { document.getElementById('click-hint').style.opacity = '0'; }, 6000);
+});
+
+function moveCam(x, y, z, rx, ry, rz) {
+    var c = document.querySelector('#camera');
+    if (!c) return;
+    var animId = 'pos_' + Date.now();
+    c.setAttribute('animation__' + animId, {
+        property: 'position',
+        to: x + ' ' + y + ' ' + z,
+        dur: 800,
+        easing: 'easeInOutQuad'
+    });
+    c.setAttribute('rotation', rx + ' ' + ry + ' ' + rz);
+}
+
+function showInfo(raw) {
+    var parts = raw.split('|');
+    var title = parts[0] || '';
+    var desc = parts[1] || '';
+    var panel = document.getElementById('info-panel');
+    document.getElementById('info-title').textContent = title;
+    document.getElementById('info-desc').textContent = desc;
+    panel.style.display = 'block';
+    panel.style.animation = 'none';
+    panel.offsetHeight;
+    panel.style.animation = 'fadeInUp 0.3s ease';
+    clearTimeout(infoTimer);
+    infoTimer = setTimeout(function() { panel.style.display = 'none'; }, 4000);
+}
+
+function resetView() {
+    moveCam(0, 3.5, 5, -20, 0, 0);
+    showInfo('VUE INITIALE|Vue d\'ensemble de la piece');
+    var r = document.querySelector('#floating-room');
+    if (r) { r.setAttribute('rotation','0 0 0'); }
+    roomRotation = 0;
+}
+function viewFromTop() {
+    moveCam(0, 7, 0.1, -89, 0, 0);
+    showInfo('VUE DU DESSUS|Plan de la piece vu d\'en haut');
+}
+function viewInside() {
+    moveCam(0, 1.6, 0, 0, 0, 0);
+    showInfo('VUE INTERIEURE|Cliquez sur les meubles pour les details');
+}
+function rotateRoom() {
+    var r = document.querySelector('#floating-room');
+    roomRotation += 45;
+    if (r) { r.setAttribute('rotation','0 '+roomRotation+' 0'); }
+    showInfo('ROTATION|Vue tournee de ' + roomRotation + ' degres');
+}
+</script>
+{% endblock %}

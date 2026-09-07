@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visites immersives — Locivoire{% endblock %}
+
+{% block content %}
+<section class="lv-hero" style="padding-bottom:80px;">
+    <svg class="lv-hero-skyline" viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 140 L0 120 L40 120 L40 90 L70 90 L70 130 L110 130 L110 70 L130 70 L130 50 L150 50 L150 100 L190 100 L190 110 L230 110 L230 60 L245 60 L245 40 L260 40 L260 60 L275 60 L275 115 L320 115 L320 80 L340 80 L340 130 L390 130 L390 100 L420 100 L420 140 L470 140 L470 55 L490 55 L490 30 L505 30 L505 55 L520 55 L520 140 L570 140 L570 95 L600 95 L600 140 L650 140 L650 65 L670 65 L670 45 L690 45 L690 65 L705 65 L705 140 L760 140 L760 100 L790 100 L790 140 L850 140 L850 75 L870 75 L870 140 L920 140 L920 110 L950 110 L950 140 L1010 140 L1010 60 L1030 60 L1030 40 L1045 40 L1045 60 L1060 60 L1060 140 L1120 140 L1120 90 L1150 90 L1150 140 L1210 140 L1210 100 L1240 100 L1240 140 L1300 140 L1300 70 L1320 70 L1320 140 L1440 140 L1440 160 L0 160 Z" fill="#132038"/>
+    </svg>
+    <div class="lv-hero-inner">
+        <span class="lv-eyebrow">Sans casque VR · Navigateur uniquement</span>
+        <h1>Visites <em>immersives</em><br>en Côte d'Ivoire</h1>
+        <p>Explorez les pièces à 360° grâce aux photos et vidéos uploadées par les propriétaires.</p>
+    </div>
+</section>
+
+<div class="lv-section">
+    <div class="lv-section-head">
+        <h2>Propriétés à visiter</h2>
+        <span class="lv-section-count">{{ properties|length }} biens</span>
+    </div>
+    <div class="lv-section-underline"></div>
+
+    <div class="lv-grid">
+        {% for property in properties %}
+        <article class="lv-prop-card">
+            <div class="lv-prop-media">
+                {% if property.images.first %}
+                    <img src="{{ property.images.first.image.url }}" alt="{{ property.title }}">
+                {% else %}
+                    <svg class="skyline-fallback" viewBox="0 0 300 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 80 L0 60 L20 60 L20 40 L35 40 L35 70 L55 70 L55 30 L65 30 L65 15 L75 15 L75 50 L100 50 L100 60 L120 60 L120 25 L130 25 L130 10 L140 10 L140 25 L150 25 L150 70 L180 70 L180 45 L195 45 L195 80 L220 80 L220 20 L232 20 L232 5 L242 5 L242 20 L252 20 L252 80 L300 80 L300 90 L0 90 Z" fill="rgba(217,164,65,0.5)"/>
+                    </svg>
+                {% endif %}
+                <span class="lv-prop-price mono">{{ property.price_per_room|floatformat:0 }} FCFA</span>
+                <span class="lv-prop-tag"><i class="fas fa-map-marker-alt"></i> {{ property.city }}</span>
+            </div>
+            <div class="lv-prop-body">
+                <h3 class="lv-prop-title">{{ property.title }}</h3>
+                <div class="lv-prop-loc"><i class="fas fa-map-marker-alt"></i> {{ property.city }}</div>
+                <a class="lv-prop-link" href="{% url 'bookings:ar_demo' property.pk %}">
+                    Lancer la visite <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </article>
+        {% empty %}
+        <p class="text-muted">Aucune propriété disponible pour le moment.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Messages — Admin Locivoire{% endblock %}
+
+{% block extra_css %}
+<style>
+  .st { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+  .st-hero { background:linear-gradient(145deg,#101A30,#1B2A4A); color:#fff; border-radius:16px; padding:24px 28px; margin-bottom:18px; }
+  .st-hero h1 { font-family:'Fraunces',serif; font-size:1.7rem; margin:0 0 12px; }
+  .st-tabs { display:flex; flex-wrap:wrap; gap:8px; }
+  .st-tabs a { padding:7px 14px; border-radius:999px; font-size:0.85rem; font-weight:600; border:1px solid rgba(255,255,255,0.2); color:#fff !important; }
+  .st-tabs a.active { background:var(--gold); color:var(--navy-deep) !important; border-color:var(--gold); }
+  .st-panel { background:#fff; border:1px solid var(--line); border-radius:14px; padding:8px 18px; }
+  .st-row { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); }
+  .st-row:last-child { border-bottom:none; }
+  .st-row a { color:var(--navy); font-weight:700; }
+  .st-pill { font-size:0.72rem; font-weight:700; padding:4px 10px; border-radius:999px; background:rgba(217,164,65,0.18); color:var(--gold-deep); }
+  .st-pill--warn { background:rgba(196,92,74,0.15); color:#7a2e24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="st">
+    <div class="st-hero">
+        <h1>Messages reçus</h1>
+        <div class="st-tabs">
+            <a href="?tab=new" class="{% if tab == 'new' %}active{% endif %}">Nouveaux ({{ new_count }})</a>
+            <a href="?tab=open" class="{% if tab == 'open' %}active{% endif %}">Ouverts</a>
+            <a href="?tab=all" class="{% if tab == 'all' %}active{% endif %}">Tous</a>
+            <a href="{% url 'accounts:staff_dashboard' %}">← Dashboard</a>
+        </div>
+    </div>
+    <div class="st-panel">
+        {% for m in items %}
+        <div class="st-row">
+            <div>
+                <a href="{% url 'accounts:staff_message_detail' m.pk %}">{{ m.subject }}</a>
+                <div style="font-size:0.82rem;color:var(--muted);">{{ m.name }} · {{ m.email }} · {{ m.created_at|date:"d/m/Y H:i" }}</div>
+            </div>
+            {% if m.status == 'new' %}<span class="st-pill st-pill--warn">Nouveau</span>
+            {% else %}<span class="st-pill">{{ m.get_status_display }}</span>{% endif %}
+        </div>
+        {% empty %}
+        <p style="color:var(--muted);padding:12px 0;">Aucun message.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

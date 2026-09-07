@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visite immersive — {{ property.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/immersive-tour.css' %}">
+<style>
+  body:has(.immersive-tour) .lv-demo-banner,
+  body:has(.immersive-tour) .lv-header,
+  body:has(.immersive-tour) .lv-footer,
+  body:has(.immersive-tour) .lv-messages { display: none !important; }
+  body:has(.immersive-tour) { background: #0a0e18; }
+  body:has(.immersive-tour) .lv-main { padding: 0; max-width: none; }
+  #aframe-viewer { width:100%; height:100%; display:none; }
+  #aframe-viewer a-scene { width:100%; height:100%; }
+  #splat-viewer {
+    width: 100%;
+    height: 100%;
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: #070b14;
+  }
+  #splat-viewer canvas { width: 100% !important; height: 100% !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="immersive-tour" id="immersive-root">
+    {% if tour.has_immersive_tour %}
+    <div class="iv-stage">
+        <div class="iv-viewer" id="tour-stage">
+            <div id="tour-curtain" class="iv-curtain" aria-hidden="true">
+                <div class="iv-curtain__inner">
+                    <span class="iv-curtain__eyebrow">Locivoire · Côte d'Ivoire</span>
+                    <h2 id="curtain-title">{{ property.title }}</h2>
+                    <p id="curtain-sub">Vous entrez dans la visite</p>
+                </div>
+            </div>
+
+            <div id="tour-hint" class="iv-hint">Glissez pour regarder · cliquez une pastille pour changer de pièce</div>
+
+            <div id="pannellum-viewer" style="display:none;"></div>
+            <div id="aframe-viewer"></div>
+            <div id="splat-viewer" style="display:none;"></div>
+            <div id="photo-viewer">
+                <img class="tour-main-photo" alt="" id="tour-main-img">
+                <div id="photo-thumbs" class="iv-thumbs"></div>
+            </div>
+            <div id="video-viewer" style="display:none;"></div>
+            <div id="room-hotspots" class="iv-hotspots"></div>
+            <div id="angle-indicator" class="iv-room-chip"></div>
+
+            <button type="button" class="iv-nav-fab iv-nav-fab--left" id="btn-prev-photo" aria-label="Angle précédent">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button type="button" class="iv-nav-fab iv-nav-fab--right" id="btn-next-photo" aria-label="Angle suivant">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <aside class="iv-rail">
+            <div class="iv-rail__top">
+                <a href="{% url 'properties:property_detail' property.pk %}" class="iv-back" title="Retour">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div class="iv-brand">
+                    <strong>{{ property.title|truncatechars:42 }}</strong>
+                    <span><i class="fas fa-map-marker-alt"></i> {{ property.city }}</span>
+                </div>
+                <div class="iv-progress" id="tour-progress">1 / {{ tour.scenes|length }}</div>
+            </div>
+
+            <div class="iv-rail__rooms">
+                <p class="iv-rail__label">Parcours de visite</p>
+                <ul class="iv-room-list">
+                    {% for scene in tour.scenes %}
+                    <li>
+                        <button type="button" class="iv-room-btn{% if forloop.first %} active{% endif %}"
+                                data-scene-index="{{ forloop.counter0 }}">
+                            <span class="iv-room-btn__num">{{ forloop.counter }}</span>
+                            <span class="iv-room-btn__name">{{ scene.name }}</span>
+                            {% if scene.photos %}
+                            <span class="iv-room-btn__meta">{{ scene.photos|length }} vues</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="iv-rail__modes">
+                <button type="button" id="btn-mode-panorama" data-mode-btn="panorama" class="active">
+                    <i class="fas fa-walking"></i> Visite
+                </button>
+                <button type="button" id="btn-mode-3d" data-mode-btn="3d">
+                    <i class="fas fa-cube"></i> 3D
+                </button>
+                <button type="button" id="btn-mode-splat" data-mode-btn="splat" style="display:none;">
+                    <i class="fas fa-globe"></i> Splat 3D
+                </button>
+                <button type="button" id="btn-mode-photos" data-mode-btn="photos">
+                    <i class="fas fa-images"></i> Galerie
+                </button>
+                <button type="button" id="btn-mode-video" data-mode-btn="video" style="display:none;">
+                    <i class="fas fa-video"></i> Vidéo
+                </button>
+            </div>
+
+            <div class="iv-rail__actions">
+                <button type="button" id="btn-prev-room" class="iv-btn-ghost"><i class="fas fa-chevron-left"></i> Pièce</button>
+                <button type="button" id="btn-next-room" class="iv-btn-gold">Pièce suivante <i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            {% if user.is_authenticated and user.is_tenant %}
+            <a href="{% url 'bookings:create_booking' property.pk %}" class="iv-cta">
+                <i class="fas fa-calendar-check"></i> Réserver ce bien
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="iv-cta iv-cta--outline">
+                Se connecter pour réserver
+            </a>
+            {% endif %}
+        </aside>
+    </div>
+    {% else %}
+    <div class="iv-empty">
+        <i class="fas fa-camera"></i>
+        <p>Aucun média immersif pour cette propriété.</p>
+        <a href="{% url 'properties:property_detail' property.pk %}">Retour au bien</a>
+    </div>
+    {% endif %}
+</div>
+
+{% if tour.has_immersive_tour %}
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="{% static 'js/immersive-tour.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var scenes = {{ tour.scenes_json|safe }};
+    var startRoomId = {% if start_room_id %}{{ start_room_id }}{% else %}null{% endif %};
+    if (window.ImmersiveTour) {
+        window.ImmersiveTour.init(scenes, startRoomId);
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

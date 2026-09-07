@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Locivoire{% endblock %}
+
+{% block extra_css %}
+<style>
+  .st { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+  .st-hero {
+    background: linear-gradient(145deg, #101A30, #1B2A4A);
+    color: #fff;
+    border-radius: 16px;
+    padding: 28px 28px 24px;
+    margin-bottom: 22px;
+    border: 1px solid rgba(217,164,65,0.25);
+  }
+  .st-hero .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .st-hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 6px;
+  }
+  .st-hero p { margin: 0; color: rgba(255,255,255,0.7); }
+  .st-nav {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 8px;
+  }
+  .st-nav a {
+    padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 0.86rem;
+    border: 1px solid rgba(255,255,255,0.18); color: #fff !important;
+  }
+  .st-nav a:hover, .st-nav a.active { background: rgba(217,164,65,0.2); border-color: var(--gold); }
+  .st-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px;
+  }
+  .st-stat {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px;
+  }
+  .st-stat strong {
+    display: block; font-family: 'Fraunces', serif; font-size: 1.8rem; color: var(--navy);
+  }
+  .st-stat span { font-size: 0.82rem; color: var(--muted); }
+  .st-panel {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px 22px; margin-bottom: 18px;
+  }
+  .st-panel h2 {
+    font-family: 'Fraunces', serif; font-size: 1.25rem; margin: 0 0 14px; color: var(--navy);
+  }
+  .st-row {
+    display: flex; justify-content: space-between; gap: 12px; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--line);
+  }
+  .st-row:last-child { border-bottom: none; }
+  .st-row a { color: var(--navy); font-weight: 700; }
+  .st-pill {
+    font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    background: rgba(217,164,65,0.18); color: var(--gold-deep);
+  }
+  .st-pill--warn { background: rgba(196,92,74,0.15); color: #7a2e24; }
+  @media (max-width: 800px) {
+    .st-stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="st">
+    <div class="st-hero">
+        <p class="eyebrow">Espace administrateur</p>
+        <h1>Admin Locivoire</h1>
+        <p>Validez les comptes prestataires et gérez les messages reçus.</p>
+        <div class="st-nav">
+            <a class="active" href="{% url 'accounts:staff_dashboard' %}">Tableau de bord</a>
+            <a href="{% url 'accounts:staff_owners' %}">Prestataires</a>
+            <a href="{% url 'accounts:staff_messages' %}">Messages{% if messages_new_count %} ({{ messages_new_count }}){% endif %}</a>
+        </div>
+    </div>
+
+    <div class="st-stats">
+        <div class="st-stat"><strong>{{ pending_owners_count }}</strong><span>Prestataires à valider</span></div>
+        <div class="st-stat"><strong>{{ verified_owners_count }}</strong><span>Prestataires validés</span></div>
+        <div class="st-stat"><strong>{{ tenants_count }}</strong><span>Locataires</span></div>
+        <div class="st-stat"><strong>{{ messages_new_count }}</strong><span>Messages non lus</span></div>
+    </div>
+
+    <div class="st-panel">
+        <h2>À valider</h2>
+        {% for o in pending_owners %}
+        <div class="st-row">
+            <div>
+                <a href="{% url 'accounts:staff_owner_detail' o.pk %}">{{ o.get_full_name|default:o.username }}</a>
+                <div style="font-size:0.82rem;color:var(--muted);">{{ o.email }} · inscrit le {{ o.date_joined|date:"d/m/Y" }}</div>
+            </div>
+            <span class="st-pill st-pill--warn">En attente</span>
+        </div>
+        {% empty %}
+        <p style="color:var(--muted);margin:0;">Aucun compte en attente.</p>
+        {% endfor %}
+        {% if pending_owners_count %}
+        <div style="margin-top:14px;">
+            <a class="btn-outline" href="{% url 'accounts:staff_owners' %}?tab=pending">Voir tous</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="st-panel">
+        <h2>Derniers messages</h2>
+        {% for m in recent_messages %}
+        <div class="st-row">
+            <div>
+                <a href="{% url 'accounts:staff_message_detail' m.pk %}">{{ m.subject }}</a>
+                <div style="font-size:0.82rem;color:var(--muted);">{{ m.name }} · {{ m.created_at|date:"d/m/Y H:i" }}</div>
+            </div>
+            {% if m.status == 'new' %}<span class="st-pill st-pill--warn">Nouveau</span>
+            {% else %}<span class="st-pill">{{ m.get_status_display }}</span>{% endif %}
+        </div>
+        {% empty %}
+        <p style="color:var(--muted);margin:0;">Aucun message pour le moment.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

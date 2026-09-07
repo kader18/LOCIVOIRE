@@ -1,0 +1,377 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} — Locivoire{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .reg {
+    min-height: calc(100vh - 140px);
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(217, 164, 65, 0.16) 0%, transparent 42%),
+      radial-gradient(ellipse at 90% 80%, rgba(47, 111, 107, 0.14) 0%, transparent 40%),
+      linear-gradient(165deg, #101A30 0%, #1B2A4A 55%, #152438 100%);
+    padding: 40px 20px 56px;
+    position: relative;
+  }
+  .reg__flag {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    display: flex;
+  }
+  .reg__flag span { flex: 1; }
+  .reg__flag .o { background: #F77F00; }
+  .reg__flag .w { background: #fff; }
+  .reg__flag .g { background: #009E60; }
+
+  .reg-card {
+    max-width: 760px;
+    margin: 0 auto;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.35);
+    background: #fff;
+    position: relative;
+    z-index: 1;
+  }
+
+  .reg-card__head {
+    padding: 28px 28px 24px;
+    background: var(--navy-deep);
+    color: #fff;
+    text-align: center;
+  }
+  .reg-card__head--tenant {
+    background: linear-gradient(145deg, #101A30 0%, #1a3d3a 100%);
+  }
+  .reg-card__head--owner {
+    background: linear-gradient(145deg, #101A30 0%, #2a2418 100%);
+  }
+
+  .reg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .reg-badge--tenant {
+    background: rgba(47, 111, 107, 0.35);
+    color: #b8e4df;
+    border: 1px solid rgba(47, 111, 107, 0.5);
+  }
+  .reg-badge--owner {
+    background: rgba(217, 164, 65, 0.22);
+    color: #f0d48a;
+    border: 1px solid rgba(217, 164, 65, 0.45);
+  }
+
+  .reg-card__head h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(1.45rem, 3vw, 1.85rem);
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .reg-card__head p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.95rem;
+  }
+  .reg-perks {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .reg-perks li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: rgba(217, 164, 65, 0.18);
+    border: 1px solid rgba(217, 164, 65, 0.4);
+    color: #f0d48a;
+  }
+
+  .reg-card__body {
+    padding: 28px 28px 32px;
+  }
+
+  .reg-section {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    font-weight: 700;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .reg-section:not(:first-child) {
+    margin-top: 8px;
+  }
+
+  .reg-card .form-label {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .reg-card .form-control,
+  .reg-card input[type="text"],
+  .reg-card input[type="email"],
+  .reg-card input[type="password"],
+  .reg-card input[type="tel"],
+  .reg-card input[type="date"],
+  .reg-card input[type="file"] {
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    padding: 0.65rem 0.9rem;
+    font-size: 0.92rem;
+    background: #fff;
+    width: 100%;
+  }
+  .reg-card .form-control:focus,
+  .reg-card input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 0.2rem rgba(217, 164, 65, 0.22);
+    outline: none;
+  }
+  .reg-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .reg-alert {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fff5f3 0%, #ffece8 100%);
+    border: 1px solid rgba(196, 92, 74, 0.35);
+    color: #7a2e24;
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+  .reg-alert ul { margin: 8px 0 0; padding-left: 1.1rem; }
+  .reg-alert__icon {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #c45c4a;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 0.8rem;
+  }
+
+  .reg-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .reg-actions .btn-gold {
+    justify-content: center;
+    width: 100%;
+    padding: 13px 22px;
+    border-radius: 10px;
+  }
+  .reg-actions .btn-outline {
+    justify-content: center;
+    width: 100%;
+    padding: 11px 18px;
+    border-radius: 10px;
+  }
+  .reg-switch {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .reg-switch a {
+    color: var(--navy) !important;
+    font-weight: 700;
+  }
+
+  @media (max-width: 576px) {
+    .reg { padding: 28px 14px 40px; }
+    .reg-card__head,
+    .reg-card__body { padding: 22px 18px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="reg">
+    <div class="reg__flag" aria-hidden="true"><span class="o"></span><span class="w"></span><span class="g"></span></div>
+
+    <div class="reg-card">
+        <div class="reg-card__head {% if user_type == 'tenant' %}reg-card__head--tenant{% else %}reg-card__head--owner{% endif %}">
+            <div class="reg-badge {% if user_type == 'tenant' %}reg-badge--tenant{% else %}reg-badge--owner{% endif %}">
+                {% if user_type == 'tenant' %}
+                    <i class="fas fa-key" aria-hidden="true"></i> Inscription locataire
+                {% else %}
+                    <i class="fas fa-home" aria-hidden="true"></i> Inscription prestataire
+                {% endif %}
+            </div>
+            <h1>
+                {% if user_type == 'tenant' %}
+                    Trouvez votre logement idéal
+                {% else %}
+                    Louez sans perdre un mois à l’agence
+                {% endif %}
+            </h1>
+            <p>
+                {% if user_type == 'tenant' %}
+                    Créez un compte pour réserver et suivre vos locations en Côte d'Ivoire.
+                {% else %}
+                    Visites immersives, validation des demandes, compte vérifié — vous gardez le contrôle de vos biens.
+                {% endif %}
+            </p>
+            {% if user_type == 'owner' %}
+            <ul class="reg-perks">
+                <li><i class="fas fa-cube" aria-hidden="true"></i> Visite immersive</li>
+                <li><i class="fas fa-user-check" aria-hidden="true"></i> Vous validez</li>
+                <li><i class="fas fa-coins" aria-hidden="true"></i> Pas de mois d’agence</li>
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="reg-card__body">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="user_type" value="{{ user_type }}">
+
+                {% if form.errors %}
+                <div class="reg-alert" role="alert">
+                    <span class="reg-alert__icon"><i class="fas fa-exclamation" aria-hidden="true"></i></span>
+                    <div>
+                        <strong>Veuillez corriger les erreurs</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }} : {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                <p class="reg-section">Informations personnelles</p>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nom d'utilisateur *</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email *</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Prénom *</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nom *</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Téléphone</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors }}</div>{% endif %}
+                        <span class="reg-hint">Ex. : +225 07 12 34 56 78</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date de naissance</label>
+                        {{ form.date_of_birth }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Lieu de naissance</label>
+                        {{ form.place_of_birth }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Photo de profil</label>
+                        {{ form.profile_picture }}
+                    </div>
+                </div>
+
+                {% if user_type == 'owner' %}
+                <p class="reg-section">Vérification d'identité</p>
+                <p class="reg-hint mb-3" style="margin-top:-6px;">Obligatoire pour les prestataires — recto et verso de la pièce.</p>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Pièce d'identité (recto) *</label>
+                        {{ form.id_card_front }}
+                        {% if form.id_card_front.errors %}<div class="text-danger small mt-1">{{ form.id_card_front.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Pièce d'identité (verso) *</label>
+                        {{ form.id_card_back }}
+                        {% if form.id_card_back.errors %}<div class="text-danger small mt-1">{{ form.id_card_back.errors }}</div>{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <p class="reg-section">Mot de passe</p>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Mot de passe *</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}<div class="text-danger small mt-1">{{ form.password1.errors }}</div>{% endif %}
+                        <span class="reg-hint">Minimum 8 caractères</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Confirmation *</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}<div class="text-danger small mt-1">{{ form.password2.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="reg-actions">
+                    <button type="submit" class="btn-gold">
+                        <i class="fas fa-user-plus" aria-hidden="true"></i> Créer mon compte
+                    </button>
+                    <a href="{% url 'accounts:profile_selection' %}" class="btn-outline">
+                        Changer de profil
+                    </a>
+                </div>
+
+                <p class="reg-switch">
+                    Déjà inscrit ?
+                    <a href="{% url 'accounts:login' %}">Se connecter</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

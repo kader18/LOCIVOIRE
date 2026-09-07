@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locivoire — Trouvez votre maison idéale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14171F;
+    --navy:#1B2A4A;
+    --navy-deep:#101A30;
+    --gold:#D9A441;
+    --gold-deep:#B9822A;
+    --teal:#2F6F6B;
+    --paper:#F5F6F3;
+    --card:#FFFFFF;
+    --line:#E3E1DA;
+    --muted:#666A6F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Work Sans', sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  a{ text-decoration:none; color:inherit; }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 48px;
+    background:var(--card);
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:50;
+  }
+  .logo{ display:flex; align-items:center; gap:10px; font-family:'Fraunces', serif; font-weight:600; font-size:1.3rem; }
+  .logo-mark{
+    width:34px; height:34px; border-radius:8px;
+    background:var(--navy);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .logo-mark svg{ width:18px; height:18px; }
+  nav{ display:flex; align-items:center; gap:32px; font-size:0.92rem; font-weight:500; }
+  nav a{ display:flex; align-items:center; gap:6px; color:var(--ink); opacity:0.8; }
+  nav a:hover{ opacity:1; color:var(--navy); }
+  .nav-actions{ display:flex; align-items:center; gap:14px; }
+  .btn-ghost{ padding:9px 16px; font-size:0.9rem; font-weight:600; }
+  .btn-solid{
+    padding:9px 18px; font-size:0.9rem; font-weight:600;
+    background:var(--navy); color:#fff; border-radius:7px;
+  }
+  .btn-solid:hover{ background:var(--navy-deep); }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    background:var(--navy);
+    overflow:hidden;
+    padding:64px 48px 150px;
+  }
+  .hero-skyline{
+    position:absolute; left:0; right:0; bottom:0;
+    width:100%; opacity:0.55;
+  }
+  .hero-inner{ position:relative; z-index:2; max-width:640px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:0.75rem; letter-spacing:0.12em;
+    color:var(--gold); text-transform:uppercase; margin-bottom:16px; display:block;
+  }
+  .hero h1{
+    font-size:2.7rem; font-weight:500; color:#fff; line-height:1.15; letter-spacing:-0.01em;
+    margin-bottom:14px;
+  }
+  .hero h1 em{ font-style:italic; color:var(--gold); }
+  .hero p{ color:#C7CEDB; font-size:1.05rem; line-height:1.5; max-width:480px; }
+
+  .search-card{
+    position:relative; z-index:3;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 24px 60px -20px rgba(16,26,48,0.45);
+    padding:22px;
+    margin-top:36px;
+    max-width:920px;
+  }
+  .search-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .search-row input, .search-row select{
+    font-family:inherit; font-size:0.92rem;
+    border:1px solid var(--line); border-radius:8px;
+    padding:11px 14px; background:var(--paper);
+    color:var(--ink);
+  }
+  .search-row input:focus, .search-row select:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+  .f-keyword{ flex:2; min-width:220px; }
+  .f-type{ flex:1; min-width:140px; }
+  .f-price{ width:110px; }
+  .btn-search{
+    background:var(--gold); color:var(--navy-deep); font-weight:700;
+    border:none; border-radius:8px; padding:11px 22px; font-size:0.92rem;
+    cursor:pointer; display:flex; align-items:center; gap:8px;
+  }
+  .btn-search:hover{ background:var(--gold-deep); color:#fff; }
+
+  .chip-row{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .chip{
+    font-size:0.82rem; font-weight:600; padding:7px 14px; border-radius:20px;
+    border:1px solid rgba(255,255,255,0.25); color:#fff;
+  }
+  .chip:hover{ background:rgba(255,255,255,0.1); border-color:var(--gold); }
+
+  /* ---------- Listings ---------- */
+  .section{ padding:64px 48px; max-width:1280px; margin:0 auto; }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
+  .section-head h2{ font-size:1.7rem; font-weight:500; }
+  .section-underline{ width:52px; height:3px; background:var(--gold); margin:10px 0 32px; border-radius:2px; }
+  .section-count{ font-family:'IBM Plex Mono', monospace; font-size:0.82rem; color:var(--muted); }
+
+  .grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:26px;
+  }
+  @media (max-width:980px){ .grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:640px){ .grid{ grid-template-columns:1fr; } }
+
+  .prop-card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    overflow:hidden; transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .prop-card:hover{ transform:translateY(-4px); box-shadow:0 18px 40px -18px rgba(20,23,31,0.25); }
+  .prop-media{
+    position:relative; height:190px;
+    background:linear-gradient(160deg, var(--navy) 0%, #2C4066 100%);
+    display:flex; align-items:flex-end; overflow:hidden;
+  }
+  .prop-media svg{ position:absolute; bottom:-6px; left:0; width:100%; opacity:0.5; }
+  .prop-price{
+    position:absolute; top:12px; left:12px;
+    background:var(--gold); color:var(--navy-deep);
+    font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:0.8rem;
+    padding:6px 11px; border-radius:6px;
+  }
+  .prop-tag{
+    position:absolute; top:12px; right:12px;
+    background:rgba(255,255,255,0.15); color:#fff; backdrop-filter:blur(4px);
+    font-size:0.72rem; font-weight:600; padding:5px 10px; border-radius:14px;
+    display:flex; align-items:center; gap:5px;
+  }
+  .prop-body{ padding:18px 18px 20px; }
+  .prop-title{ font-size:1.05rem; font-weight:600; margin-bottom:6px; line-height:1.3; font-family:'Work Sans', sans-serif; }
+  .prop-loc{
+    display:flex; align-items:center; gap:5px; font-size:0.85rem; color:var(--teal); font-weight:600; margin-bottom:12px;
+  }
+  .prop-meta{
+    display:flex; gap:16px; font-family:'IBM Plex Mono', monospace; font-size:0.78rem; color:var(--muted);
+    padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:14px;
+  }
+  .prop-meta span{ display:flex; align-items:center; gap:5px; }
+  .prop-link{
+    font-size:0.88rem; font-weight:700; color:var(--navy);
+    display:flex; align-items:center; gap:6px;
+  }
+  .prop-card:hover .prop-link{ color:var(--gold-deep); }
+
+  /* ---------- Footer ---------- */
+  footer{
+    background:var(--navy-deep); color:#B9C1D1; padding:40px 48px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  footer .logo{ color:#fff; }
+  footer .logo-mark{ background:var(--gold); }
+  footer p{ font-size:0.85rem; opacity:0.75; }
+  footer .foot-right{ font-size:0.82rem; opacity:0.6; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L12 4l9 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    Locivoire
+  </div>
+  <nav>
+    <a href="#">🔍 Rechercher</a>
+    <a href="#">🎥 Visites immersives</a>
+  </nav>
+  <div class="nav-actions">
+    <a class="btn-ghost" href="#">Connexion</a>
+    <a class="btn-solid" href="#">S'inscrire</a>
+  </div>
+</header>
+
+<section class="hero">
+  <svg class="hero-skyline" viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 140 L0 120 L40 120 L40 90 L70 90 L70 130 L110 130 L110 70 L130 70 L130 50 L150 50 L150 100 L190 100 L190 110 L230 110 L230 60 L245 60 L245 40 L260 40 L260 60 L275 60 L275 115 L320 115 L320 80 L340 80 L340 130 L390 130 L390 100 L420 100 L420 140 L470 140 L470 55 L490 55 L490 30 L505 30 L505 55 L520 55 L520 140 L570 140 L570 95 L600 95 L600 140 L650 140 L650 65 L670 65 L670 45 L690 45 L690 65 L705 65 L705 140 L760 140 L760 100 L790 100 L790 140 L850 140 L850 75 L870 75 L870 140 L920 140 L920 110 L950 110 L950 140 L1010 140 L1010 60 L1030 60 L1030 40 L1045 40 L1045 60 L1060 60 L1060 140 L1120 140 L1120 90 L1150 90 L1150 140 L1210 140 L1210 100 L1240 100 L1240 140 L1300 140 L1300 70 L1320 70 L1320 140 L1440 140 L1440 160 L0 160 Z" fill="#132038"/>
+    <path d="M0 145 Q 60 130 120 145 T 240 145 T 360 145 T 480 145 T 600 145 T 720 145 T 840 145 T 960 145 T 1080 145 T 1200 145 T 1320 145 T 1440 145 L1440 160 L0 160 Z" fill="#D9A441" opacity="0.18"/>
+  </svg>
+  <div class="hero-inner">
+    <span class="eyebrow">Abidjan · Bouaké · Yamoussoukro · San-Pédro</span>
+    <h1>Trouvez votre <em>maison idéale</em>,<br>quartier par quartier.</h1>
+    <p>Des milliers de logements vérifiés en Côte d'Ivoire, avec photos réelles et visites virtuelles immersives.</p>
+  </div>
+
+  <div class="search-card">
+    <div class="search-row">
+      <input class="f-keyword" type="text" placeholder="Rechercher une propriété, un quartier...">
+      <select class="f-type"><option>Tous les types</option><option>Studio</option><option>Appartement</option><option>Maison / Villa</option></select>
+      <input class="f-price" type="text" placeholder="Prix min">
+      <input class="f-price" type="text" placeholder="Prix max">
+      <button class="btn-search">🔍 Rechercher</button>
+    </div>
+  </div>
+  <div class="chip-row">
+    <a class="chip" href="#">Plateau</a>
+    <a class="chip" href="#">Cocody</a>
+    <a class="chip" href="#">Marcory</a>
+    <a class="chip" href="#">Yopougon</a>
+    <a class="chip" href="#">Riviera</a>
+  </div>
+</section>
+
+<div class="section">
+  <div class="section-head">
+    <h2>Découvrez les meilleures maisons</h2>
+    <span class="section-count">247 biens disponibles</span>
+  </div>
+  <div class="section-underline"></div>
+
+  <div class="grid" id="listings"></div>
+</div>
+
+<footer>
+  <div>
+    <div class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L12 4l9 7" stroke="#101A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" stroke="#101A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      Locivoire
+    </div>
+    <p>Votre plateforme de location de maisons en Côte d'Ivoire.</p>
+  </div>
+  <div class="foot-right">© 2026 Locivoire. Tous droits réservés.</div>
+</footer>
+
+<script>
+  const listings = [
+    { title: "Studio meublé — Plateau", price: "45 000 FCFA", loc: "Abidjan, Plateau", beds: 1, baths: 1, surface: "35 m²" },
+    { title: "Villa luxueuse 8 pièces — Riviera", price: "150 000 FCFA", loc: "Abidjan, Riviera", beds: 8, baths: 4, surface: "450 m²" },
+    { title: "Appartement cosy 4 pièces — Marcory", price: "60 000 FCFA", loc: "Abidjan, Marcory", beds: 4, baths: 1, surface: "95 m²" },
+    { title: "Maison moderne 6 pièces — Yopougon", price: "75 000 FCFA", loc: "Abidjan, Yopougon", beds: 6, baths: 2, surface: "180 m²" },
+    { title: "Villa 10 pièces — Cocody", price: "100 000 FCFA", loc: "Abidjan, Cocody", beds: 10, baths: 3, surface: "350 m²" }
+  ];
+
+  const skylineSvg = `<svg viewBox="0 0 300 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 80 L0 60 L20 60 L20 40 L35 40 L35 70 L55 70 L55 30 L65 30 L65 15 L75 15 L75 50 L100 50 L100 60 L120 60 L120 25 L130 25 L130 10 L140 10 L140 25 L150 25 L150 70 L180 70 L180 45 L195 45 L195 80 L220 80 L220 20 L232 20 L232 5 L242 5 L242 20 L252 20 L252 80 L300 80 L300 90 L0 90 Z" fill="rgba(217,164,65,0.5)"/>
+  </svg>`;
+
+  const pin = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12Z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="2.3" fill="currentColor"/></svg>`;
+
+  const grid = document.getElementById('listings');
+  grid.innerHTML = listings.map(l => `
+    <div class="prop-card">
+      <div class="prop-media">
+        ${skylineSvg}
+        <span class="prop-price mono">${l.price}</span>
+        <span class="prop-tag">${pin} Abidjan</span>
+      </div>
+      <div class="prop-body">
+        <div class="prop-title">${l.title}</div>
+        <div class="prop-loc">${pin} ${l.loc}</div>
+        <div class="prop-meta">
+          <span>🛏 ${l.beds} pièces</span>
+          <span>🛁 ${l.baths} sdb</span>
+          <span>▭ ${l.surface}</span>
+        </div>
+        <a class="prop-link" href="#">Voir les détails →</a>
+      </div>
+    </div>
+  `).join('');
+</script>
+
+</body>
+</html>

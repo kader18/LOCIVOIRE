@@ -1,0 +1,17 @@
+node_modules/
+www/
+.idea/
+*.apk
+*.aab
+*.ipa
+.DS_Store
+local.properties
+*.keystore
+*.jks
+android/key.properties
+android/.gradle/
+android/app/build/
+android/build/
+android/captures/
+ios/App/Pods/
+ios/DerivedData/

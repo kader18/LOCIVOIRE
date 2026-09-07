@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Officiel d'Identité de Marque — LocIvoire</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            line-height: 1.7;
+            color: #1f2937;
+            background: #fff;
+            font-size: 11pt;
+        }
+        
+        .page {
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm 25mm;
+        }
+        
+        /* En-tête de page */
+        .page-header {
+            font-size: 0.75rem;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+        
+        /* Couverture */
+        .cover {
+            text-align: center;
+            padding: 40px 0 50px;
+        }
+        
+        .cover .brand-name {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+        
+        .cover .slogan {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 24px;
+            letter-spacing: 0.02em;
+        }
+        
+        .cover .doc-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+        
+        .cover .doc-dest {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+        
+        /* Tableau récapitulatif */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0 35px;
+            font-size: 10pt;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .summary-table th, .summary-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .summary-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            width: 35%;
+        }
+        
+        .summary-table td {
+            background: #fff;
+        }
+        
+        .summary-table tr:nth-child(even) td {
+            background: #fafafa;
+        }
+        
+        .statut-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #dbeafe;
+            color: #1e40af;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+        
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin: 28px 0 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+            margin: 20px 0 10px;
+        }
+        
+        p {
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+        
+        ul {
+            margin: 10px 0 10px 22px;
+        }
+        
+        li {
+            margin-bottom: 6px;
+        }
+        
+        /* Tableau charte chromatique */
+        .color-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 10pt;
+        }
+        
+        .color-table th, .color-table td {
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .color-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .color-table .color-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .color-table .color-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        
+        .color-table .hex-code {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+        
+        /* Tableau actions */
+        .actions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 10pt;
+        }
+        
+        .actions-table th, .actions-table td {
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .actions-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .priority-haute {
+            background: #fef2f2;
+            color: #dc2626;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+        
+        .priority-moyenne {
+            background: #fffbeb;
+            color: #d97706;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+        
+        .highlight-box {
+            background: #f0f9ff;
+            border-left: 4px solid #2563eb;
+            padding: 14px 18px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .conclusion {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2563eb;
+            margin-top: 40px;
+            padding: 24px;
+        }
+        
+        .footer-doc {
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-align: center;
+        }
+        
+        @media print {
+            body { background: white; }
+            .page { padding: 15mm; }
+            h2 { page-break-after: avoid; }
+            .cover .brand-name { -webkit-text-fill-color: #2563eb; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="page-header">Document Officiel d'Identité de Marque</div>
+        
+        <!-- Couverture -->
+        <div class="cover">
+            <div class="brand-name">LocIvoire</div>
+            <p class="slogan">Votre logement idéal, à portée de clic</p>
+            <p class="doc-title">Document officiel d'identité de marque</p>
+            <p class="doc-dest">À destination de l'équipe fondatrice</p>
+            
+            <table class="summary-table">
+                <tr>
+                    <th>Nom de la plateforme</th>
+                    <td>LocIvoire</td>
+                </tr>
+                <tr>
+                    <th>Slogan officiel</th>
+                    <td>Votre logement idéal, à portée de clic</td>
+                </tr>
+                <tr>
+                    <th>Secteur d'activité</th>
+                    <td>Location immobilière / Plateforme digitale / Réalité augmentée</td>
+                </tr>
+                <tr>
+                    <th>Marché cible</th>
+                    <td>Bailleurs, Propriétaires, Promoteurs immobiliers, Locataires</td>
+                </tr>
+                <tr>
+                    <th>Pays d'origine</th>
+                    <td>Côte d'Ivoire</td>
+                </tr>
+                <tr>
+                    <th>Date du document</th>
+                    <td>Février 2026</td>
+                </tr>
+                <tr>
+                    <th>Statut</th>
+                    <td><span class="statut-badge">Confidentiel – Usage Interne</span></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Section 1 -->
+        <h2>1. Présentation de la plateforme</h2>
+        
+        <h3>1.1 Contexte et genèse</h3>
+        <p>LocIvoire est née d'un constat simple : la recherche et la location de biens immobiliers en Côte d'Ivoire sont souvent chronophages, coûteuses et manquent de transparence. Entre les déplacements multiples, les visites infructueuses et les difficultés à vérifier la fiabilité des annonces, locataires et propriétaires peinent à se connecter efficacement.</p>
+        <p>Face à ce défi, LocIvoire s'est positionnée comme une plateforme innovante visant à digitaliser et moderniser l'expérience de la location immobilière, en combinant mise en relation directe, visites virtuelles en réalité augmentée et outils de gestion performants.</p>
+
+        <h3>1.2 Notre mission</h3>
+        <p>Faciliter la mise en relation entre bailleurs et locataires grâce à une plateforme numérique fiable, transparente et innovante. LocIvoire vise à réduire les frictions du marché immobilier ivoirien en offrant des outils adaptés aux besoins locaux et une expérience utilisateur moderne, incluant la découverte des biens à distance via la réalité augmentée.</p>
+
+        <h3>1.3 Notre vision</h3>
+        <p>Devenir la référence en matière de location immobilière en Côte d'Ivoire et au-delà, en révolutionnant l'expérience de la recherche de logement. LocIvoire aspire à créer un écosystème de confiance où chaque acteur — propriétaire, locataire ou promoteur — bénéficie d'une expérience fluide, sécurisée et alignée avec les standards internationaux.</p>
+
+        <!-- Section 2 -->
+        <h2>2. Identité de marque</h2>
+        
+        <h3>2.1 Le nom : LocIvoire</h3>
+        <p>Le nom <strong>LocIvoire</strong> est une création originale dérivée de la contraction de deux mots fondateurs :</p>
+        <ul>
+            <li><strong>« Loc »</strong> — abréviation de <em>Location</em>, l'activité cœur de la plateforme ;</li>
+            <li><strong>« Ivoire »</strong> — référence directe à la <em>Côte d'Ivoire</em>, pays d'origine et marché d'ancrage.</li>
+        </ul>
+        <p>Cette fusion crée une identité mémorisable, immédiatement associée à la location immobilière en Côte d'Ivoire.</p>
+
+        <h3>2.2 Le slogan : « Votre logement idéal, à portée de clic »</h3>
+        <p>Ce slogan met l'accent sur la facilité d'accès aux biens immobiliers et sur la promesse de simplicité offerte par la plateforme. « À portée de clic » souligne l'aspect digital et la réduction des étapes traditionnelles (déplacements, paperasse), tout en évoquant la proximité et l'accessibilité du logement idéal pour chaque utilisateur.</p>
+
+        <h3>2.3 Charte chromatique</h3>
+        <table class="color-table">
+            <thead>
+                <tr>
+                    <th>Couleur</th>
+                    <th>Code HEX</th>
+                    <th>Usage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="color-cell">
+                            <div class="color-box" style="background: #2563eb;"></div>
+                            <span>Bleu primaire</span>
+                        </div>
+                    </td>
+                    <td class="hex-code">#2563eb</td>
+                    <td>Couleur principale, logo, titres, liens, éléments d'action</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="color-cell">
+                            <div class="color-box" style="background: #7c3aed;"></div>
+                            <span>Violet secondaire</span>
+                        </div>
+                    </td>
+                    <td class="hex-code">#7c3aed</td>
+                    <td>Logo, accents, gradients, éléments créatifs</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="color-cell">
+                            <div class="color-box" style="background: #f59e0b;"></div>
+                            <span>Orange accent</span>
+                        </div>
+                    </td>
+                    <td class="hex-code">#f59e0b</td>
+                    <td>Mises en avant, badges, éléments d'alerte</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="color-cell">
+                            <div class="color-box" style="background: #1f2937;"></div>
+                            <span>Noir / Gris foncé</span>
+                        </div>
+                    </td>
+                    <td class="hex-code">#1f2937</td>
+                    <td>Texte principal, fond sombre</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="color-cell">
+                            <div class="color-box" style="background: #ffffff; border: 1px solid #e5e7eb;"></div>
+                            <span>Blanc</span>
+                        </div>
+                    </td>
+                    <td class="hex-code">#FFFFFF</td>
+                    <td>Fond clair, documents officiels, espaces</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.4 Le logo</h3>
+        <p>Le logo de LocIvoire se compose de <strong>deux éléments indissociables</strong> :</p>
+        <ul>
+            <li><strong>Le pictogramme</strong> — Une icône de maison (logement, foyer) symbolisant le secteur immobilier et les valeurs de sécurité, d'abri et de sérénité. Elle communique instantanément l'activité de la plateforme.</li>
+            <li><strong>Le nom « LocIvoire »</strong> — En typographie Inter, associé au pictogramme. La couleur principale est le bleu (#2563eb), avec des variantes en gradient bleu-violet pour les supports digitaux.</li>
+        </ul>
+        <p>Le logo est adapté aux supports numériques (site web, applications, réseaux sociaux) et reste lisible à toutes les tailles. L'association icône + nom doit être conservée pour une reconnaissance optimale de la marque.</p>
+
+        <!-- Section 3 -->
+        <h2>3. Offre et proposition de valeur</h2>
+        
+        <h3>3.1 Le problème que nous résolvons</h3>
+        <p>Sur le marché immobilier ivoirien, plusieurs problèmes persistent : perte de temps et d'argent lors des visites multiples, difficultés à trouver des biens fiables, manque d'outils digitaux adaptés, faible transparence entre bailleurs et locataires, et absence de solutions de visite à distance pour les personnes éloignées ou à l'étranger.</p>
+
+        <h3>3.2 Notre solution</h3>
+        <p>LocIvoire propose une plateforme complète de location immobilière permettant aux bailleurs de présenter leurs biens (maisons, appartements, villas, studios) et aux locataires de les découvrir, filtrer et réserver en ligne. La plateforme intègre des visites virtuelles en réalité augmentée, offrant une expérience immersive sans déplacement physique, et facilite la mise en contact direct ainsi que la gestion des réservations.</p>
+
+        <h3>3.3 Nos avantages concurrentiels</h3>
+        <ul>
+            <li><strong>Technologie AR intégrée</strong> — Visites virtuelles en réalité augmentée, différenciateur majeur sur le marché ivoirien.</li>
+            <li><strong>Interface simple et accessible</strong> — Expérience utilisateur soignée pour tous les profils.</li>
+            <li><strong>Gain de temps et d'argent</strong> — Réduction des déplacements et des visites infructueuses.</li>
+            <li><strong>Vérification des propriétaires</strong> — Pièces d'identité obligatoires pour renforcer la confiance.</li>
+            <li><strong>Ancrage local, vision panafricaine</strong> — Conception adaptée au marché ivoirien avec un potentiel d'extension.</li>
+        </ul>
+
+        <!-- Section 4 -->
+        <h2>4. Positionnement stratégique</h2>
+        
+        <h3>4.1 Marché cible</h3>
+        <p><strong>Côté offre</strong> : Propriétaires particuliers, promoteurs immobiliers et bailleurs professionnels souhaitant valoriser leurs biens et gérer leurs réservations efficacement.</p>
+        <p><strong>Côté demande</strong> : Locataires à la recherche d'un logement (particuliers, expatriés, travailleurs) en Côte d'Ivoire, avec une focalisation initiale sur Abidjan et les grandes villes.</p>
+
+        <h3>4.2 Positionnement</h3>
+        <p>LocIvoire se positionne comme une plateforme <strong>innovante, moderne et fiable</strong>, apportant de la valeur et de la confiance dans le secteur immobilier ivoirien. Elle combine ancrage local et standards internationaux pour offrir une expérience unique sur le marché.</p>
+
+        <!-- Section 5 -->
+        <h2>5. Prochaines étapes</h2>
+        
+        <p>Les prochaines étapes sont essentielles pour consolider l'identité de LocIvoire et accélérer son déploiement sur le marché.</p>
+        
+        <table class="actions-table">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Action</th>
+                    <th>Priorité</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Validation du logo définitif avec le slogan officiel</td>
+                    <td><span class="priority-haute">Haute</span></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Développement de la charte graphique complète (support print et digital)</td>
+                    <td><span class="priority-haute">Haute</span></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Finalisation et déploiement du MVP de la plateforme</td>
+                    <td><span class="priority-haute">Haute</span></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Optimisation de l'expérience utilisateur (UI/UX)</td>
+                    <td><span class="priority-haute">Haute</span></td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Élaboration du business plan et modèle économique</td>
+                    <td><span class="priority-moyenne">Moyenne</span></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>Stratégie de lancement et plan de communication</td>
+                    <td><span class="priority-moyenne">Moyenne</span></td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>Identification et validation des partenaires stratégiques</td>
+                    <td><span class="priority-moyenne">Moyenne</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="conclusion">Ce document est le reflet de notre ambition commune. Ensemble, construisons LocIvoire.</p>
+
+        <div class="footer-doc">
+            <p>Document officiel LocIvoire — Charte d'identité de marque</p>
+            <p>© 2026 LocIvoire. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+</html>

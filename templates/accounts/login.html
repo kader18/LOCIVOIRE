@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Connexion — Locivoire{% endblock %}
+
+{% block body_attrs %}class="lv-page-auth"{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  body.lv-page-auth {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  body.lv-page-auth .lv-header {
+    flex-shrink: 0;
+  }
+  body.lv-page-auth .lv-main {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+  body.lv-page-auth .lv-footer {
+    flex-shrink: 0;
+    padding: 12px 28px;
+  }
+
+  .auth-page {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse at 18% 85%, rgba(217,164,65,0.14), transparent 48%),
+      var(--navy);
+    padding: 12px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-page__inner {
+    width: min(100%, 420px);
+    position: relative;
+    z-index: 1;
+  }
+  .auth-card {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: 0 18px 40px -18px rgba(16,26,48,0.5);
+  }
+  .auth-card .card-header {
+    border: none;
+    padding: 1rem 1.25rem 0.9rem;
+    background: var(--navy-deep);
+    color: white;
+  }
+  .auth-card .card-header .lv-eyebrow {
+    margin-bottom: 0;
+  }
+  .auth-card .card-header h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.45rem;
+    margin: 0.35rem 0 0;
+  }
+  .auth-card .card-header p {
+    margin: 0.25rem 0 0;
+    font-size: 0.82rem;
+  }
+  .auth-card .card-body {
+    padding: 1.15rem 1.25rem 1.2rem;
+    background: #fff;
+  }
+  .auth-card .mb-3 { margin-bottom: 0.75rem !important; }
+  .auth-card .mb-4 { margin-bottom: 0.9rem !important; }
+  .auth-card .mt-4 { margin-top: 0.85rem !important; }
+  .auth-card .form-label {
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+  }
+  .auth-card .form-control {
+    padding: 0.55rem 0.75rem;
+  }
+  .auth-card .form-control:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 0.2rem rgba(217, 164, 65, 0.25);
+  }
+  .auth-card .btn-gold {
+    padding: 10px 18px;
+  }
+  .auth-card.is-error .form-control {
+    border-color: #c45c4a;
+    background: #fff8f7;
+  }
+  .auth-card.is-error .form-control:focus {
+    border-color: #c45c4a;
+    box-shadow: 0 0 0 0.2rem rgba(196, 92, 74, 0.2);
+  }
+  .auth-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 0.9rem;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fff5f3 0%, #ffece8 100%);
+    border: 1px solid rgba(196, 92, 74, 0.35);
+    color: #7a2e24;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+  .auth-alert__icon {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #c45c4a;
+    color: #fff;
+    font-size: 0.75rem;
+  }
+  .auth-alert strong {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: #5c211a;
+  }
+
+  @media (max-height: 700px) {
+    .auth-card .card-header { padding: 0.75rem 1rem; }
+    .auth-card .card-header h2 { font-size: 1.25rem; }
+    .auth-card .card-body { padding: 0.9rem 1rem 1rem; }
+    body.lv-page-auth .lv-footer { padding: 8px 20px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-page__inner">
+        <div class="card auth-card border-0{% if messages %} is-error{% endif %}">
+            <div class="card-header text-center">
+                <span class="lv-eyebrow">Côte d'Ivoire</span>
+                <h2>Connexion</h2>
+                <p class="opacity-75">Accédez à votre espace Locivoire</p>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="auth-alert" role="alert">
+                        <span class="auth-alert__icon" aria-hidden="true"><i class="fas fa-exclamation"></i></span>
+                        <div>
+                            <strong>Connexion impossible</strong>
+                            {{ message }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Nom d'utilisateur</label>
+                        <input type="text" name="username" class="form-control"
+                               placeholder="Votre nom d'utilisateur" required
+                               value="{{ username }}" autofocus
+                               {% if messages %}aria-invalid="true"{% endif %}>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Mot de passe</label>
+                        <input type="password" name="password" class="form-control"
+                               placeholder="Votre mot de passe" required
+                               {% if messages %}aria-invalid="true"{% endif %}>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn-gold justify-content-center">
+                            <i class="fas fa-sign-in-alt"></i> Se connecter
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center mt-4">
+                    <a href="{% url 'accounts:profile_selection' %}" style="color:var(--navy);font-weight:600;font-size:0.92rem;">
+                        Pas encore de compte ? S'inscrire
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

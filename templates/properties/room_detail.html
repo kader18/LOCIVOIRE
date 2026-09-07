@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ room.name }} - {{ property.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .room-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 120px 0 60px;
+        color: white;
+        text-align: center;
+    }
+    
+    .room-info-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .room-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+    
+    .room-image {
+        border-radius: 10px;
+        overflow: hidden;
+        aspect-ratio: 1;
+    }
+    
+    .room-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .ar-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Room Hero -->
+<div class="room-hero">
+    <div class="container">
+        <h1 class="display-4 mb-3">{{ room.name }}</h1>
+        <p class="lead">{{ property.title }} - {{ property.city }}</p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Room Images -->
+            {% if room_images %}
+                <div class="room-gallery">
+                    {% for image in room_images %}
+                        <div class="room-image">
+                            <img src="{{ image.image.url }}" alt="{{ room.name }}">
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="room-info-card text-center py-5">
+                    <i class="fas fa-image fa-5x text-muted mb-3"></i>
+                    <p class="text-muted">Aucune image disponible pour cette chambre</p>
+                </div>
+            {% endif %}
+            
+            <!-- Room Description -->
+            <div class="room-info-card">
+                <h3><i class="fas fa-info-circle me-2"></i>Description</h3>
+                {% if room.description %}
+                    <p>{{ room.description|linebreaks }}</p>
+                {% else %}
+                    <p class="text-muted">Aucune description disponible.</p>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Type:</strong> {{ room.get_room_type_display }}</p>
+                        <p><strong>Étage:</strong> {{ room.floor_number }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        {% if room.area %}
+                            <p><strong>Superficie:</strong> {{ room.area }} m²</p>
+                        {% endif %}
+                        <p><strong>Propriété:</strong> {{ property.title }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="room-info-card sticky-top" style="top: 80px;">
+                <h4 class="mb-4"><i class="fas fa-street-view me-2"></i>Visite immersive</h4>
+                
+                {% if has_room_tour %}
+                    <div class="ar-badge">
+                        <i class="fas fa-check-circle"></i>
+                        Visite disponible
+                    </div>
+                    <p class="mb-3">Explorez cette pièce à 360° depuis votre navigateur, sans casque VR.</p>
+                    <a href="{% url 'bookings:room_ar_tour' property.pk room.pk %}" 
+                       class="btn btn-success btn-lg w-100 mb-3">
+                        <i class="fas fa-street-view me-2"></i>Visiter cette pièce
+                    </a>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Aucune photo ou vidéo pour cette pièce. Le propriétaire peut en ajouter dans la gestion des médias.
+                    </div>
+                {% endif %}
+                
+                <hr>
+                
+                <h5 class="mb-3">Propriété</h5>
+                <p><strong>{{ property.title }}</strong></p>
+                <p class="text-muted">{{ property.city }}</p>
+                <p class="h5 text-primary mb-3">
+                    {{ property.price_per_room|floatformat:0 }} FCFA / chambre
+                </p>
+                
+                <a href="{% url 'properties:property_detail' property.pk %}" 
+                   class="btn btn-primary w-100">
+                    <i class="fas fa-arrow-left me-2"></i>Retour à la propriété
+                </a>
+                
+                {% if property.images.exists or property.videos.exists %}
+                    <a href="{% url 'bookings:ar_tour' property.pk %}" 
+                       class="btn btn-outline-success w-100 mt-2">
+                        <i class="fas fa-street-view me-2"></i>Visite de toute la propriété
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

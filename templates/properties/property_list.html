@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rechercher une propriété - Locivoire{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Search Section -->
+    <div class="card bg-primary text-white mb-5 shadow-lg">
+        <div class="card-body p-5">
+            <h1 class="display-4 mb-4 text-center">
+                <i class="fas fa-search me-3"></i>Où cherchez-vous ?
+            </h1>
+            <form method="get" action="{% url 'properties:property_list' %}" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="search" class="form-control form-control-lg" 
+                           placeholder="Rechercher..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="property_type" class="form-select form-select-lg">
+                        <option value="">Type</option>
+                        {% for value, label in PROPERTY_TYPES %}
+                            <option value="{{ value }}" {% if property_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="city" class="form-control form-control-lg" 
+                           placeholder="Ville" value="{{ city }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="min_price" class="form-control form-control-lg" 
+                           placeholder="Prix min" value="{{ min_price }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="max_price" class="form-control form-control-lg" 
+                           placeholder="Prix max" value="{{ max_price }}">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-light btn-lg w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Properties Grid -->
+    <h2 class="mb-4">Découvrez les meilleures maisons de votre localité</h2>
+    
+    {% if properties %}
+        <div class="row g-4">
+            {% for property in properties %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm property-card">
+                        {% if property.images.first %}
+                            <img src="{{ property.images.first.image.url }}" class="card-img-top" 
+                                 alt="{{ property.title }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" 
+                                 style="height: 200px;">
+                                <i class="fas fa-home fa-3x text-white"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ property.title }}</h5>
+                            <p class="text-muted mb-2">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ property.city }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="fas fa-bed me-1"></i>{{ property.number_of_rooms }} pièces
+                                <span class="ms-3">
+                                    <i class="fas fa-bath me-1"></i>{{ property.number_of_bathrooms }} sdb
+                                </span>
+                            </p>
+                            <p class="h5 text-primary mb-3">
+                                {{ property.price_per_room|floatformat:0 }} FCFA / chambre
+                            </p>
+                            <a href="{% url 'properties:property_detail' property.pk %}" 
+                               class="btn btn-primary w-100">
+                                <i class="fas fa-eye me-2"></i>Voir les détails
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if properties.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if properties.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ properties.previous_page_number }}">Précédent</a>
+                        </li>
+                    {% endif %}
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ properties.number }} sur {{ properties.paginator.num_pages }}</span>
+                    </li>
+                    {% if properties.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ properties.next_page_number }}">Suivant</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle fa-2x mb-3"></i>
+            <h4>Aucune propriété trouvée</h4>
+            <p>Essayez de modifier vos critères de recherche.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

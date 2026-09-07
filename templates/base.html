@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Locivoire — Location de maisons en Côte d'Ivoire{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/locivoire-brand.css' %}">
+    <link rel="stylesheet" href="{% static 'css/gallery.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body {% block body_attrs %}{% endblock %}>
+    <div id="lv-splash" class="lv-splash" hidden aria-hidden="true">
+        <div class="lv-splash__glow" aria-hidden="true"></div>
+        <div class="lv-splash__flag" aria-hidden="true">
+            <span class="o"></span><span class="w"></span><span class="g"></span>
+        </div>
+        <div class="lv-splash__inner">
+            <div class="lv-splash__mark">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path class="lv-splash__roof" d="M3 11L12 4l9 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path class="lv-splash__house" d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <p class="lv-splash__brand">Locivoire</p>
+            <p class="lv-splash__tag">Côte d'Ivoire · maisons &amp; visites immersives</p>
+            <div class="lv-splash__bar" aria-hidden="true"><span></span></div>
+        </div>
+        <button type="button" class="lv-splash__skip" id="lvSplashSkip">Passer</button>
+    </div>
+
+    <header class="lv-header">
+        <div class="lv-header__inner">
+            <a class="lv-logo" href="{% url 'properties:property_list' %}">
+                <span class="lv-logo-mark">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L12 4l9 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="lv-logo-text">Locivoire</span>
+            </a>
+
+            <button class="lv-toggler" type="button" id="lvNavToggle" aria-label="Menu" aria-expanded="false" aria-controls="lvNavCollapse">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="lv-nav-collapse" id="lvNavCollapse">
+                <nav class="lv-nav" aria-label="Navigation principale">
+                    <a href="{% url 'properties:ar_demo_page' %}" class="lv-nav__link">
+                        <i class="fas fa-street-view" aria-hidden="true"></i>
+                        <span>Visites immersives</span>
+                    </a>
+                    {% if user.is_authenticated %}
+                        {% if user.is_platform_admin %}
+                            <a href="{% url 'accounts:staff_dashboard' %}" class="lv-nav__link">
+                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                <span>Admin</span>
+                            </a>
+                        {% elif user.is_owner %}
+                            <a href="{% url 'properties:owner_dashboard' %}" class="lv-nav__link">
+                                <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                                <span>Tableau de bord</span>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'properties:tenant_dashboard' %}" class="lv-nav__link">
+                                <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                                <span>Mon espace</span>
+                            </a>
+                        {% endif %}
+                        {% if not user.is_platform_admin %}
+                        <a href="{% url 'bookings:booking_list' %}" class="lv-nav__link">
+                            <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                            <span>Réservations</span>
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                    <a href="{% url 'properties:property_list' %}#contact" class="lv-nav__link">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        <span>Contact</span>
+                    </a>
+                </nav>
+                <div class="lv-nav-actions">
+                    {% if user.is_authenticated %}
+                        <a class="btn-ghost" href="{% url 'accounts:profile' %}">
+                            {{ user.username }}
+                            <span class="lv-badge">{% if user.is_platform_admin %}Admin{% elif user.is_owner %}Proprio{% else %}Locataire{% endif %}</span>
+                        </a>
+                        <a class="btn-outline" href="{% url 'accounts:logout' %}">Déconnexion</a>
+                    {% else %}
+                        <a class="btn-outline" href="{% url 'accounts:login' %}">Connexion</a>
+                        <a class="btn-gold lv-nav-cta" href="{% url 'accounts:profile_selection' %}">S'inscrire</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {% block messages %}
+    {% if messages %}
+    <div class="lv-messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endblock %}
+
+    <main class="lv-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="lv-footer{% block footer_modifier %}{% endblock %}" {% block footer_attrs %}{% endblock %}>
+        <div class="lv-footer__wrap">
+            {% block footer_contact %}{% endblock %}
+            <div class="lv-footer__bottom">
+                <div class="lv-logo">
+                    <span class="lv-logo-mark">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L12 4l9 7" stroke="#101A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" stroke="#101A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    Locivoire
+                </div>
+                <p class="foot-right">© 2026 Locivoire. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        (function () {
+            var toggle = document.getElementById('lvNavToggle');
+            var panel = document.getElementById('lvNavCollapse');
+            if (!toggle || !panel) return;
+
+            function setOpen(open) {
+                panel.classList.toggle('open', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                var icon = toggle.querySelector('i');
+                if (icon) {
+                    icon.className = open ? 'fas fa-times' : 'fas fa-bars';
+                }
+            }
+
+            toggle.addEventListener('click', function () {
+                setOpen(!panel.classList.contains('open'));
+            });
+
+            panel.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (window.matchMedia('(max-width: 900px)').matches) {
+                        setOpen(false);
+                    }
+                });
+            });
+
+            // Repasse en menu desktop si on élargit la fenêtre
+            window.addEventListener('resize', function () {
+                if (!window.matchMedia('(max-width: 900px)').matches) {
+                    setOpen(false);
+                }
+            });
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
+    <script>
+    (function () {
+        var splash = document.getElementById('lv-splash');
+        if (!splash || document.body.getAttribute('data-lv-splash') !== 'home') return;
+
+        var KEY = 'lv_splash_seen_v1';
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        try {
+            if (sessionStorage.getItem(KEY) === '1' || reduce) return;
+        } catch (e) { /* ignore */ }
+
+        var done = false;
+        function finish() {
+            if (done) return;
+            done = true;
+            splash.classList.add('is-out');
+            document.body.classList.remove('lv-splash-lock');
+            try { sessionStorage.setItem(KEY, '1'); } catch (e) { /* ignore */ }
+            setTimeout(function () {
+                splash.hidden = true;
+                splash.setAttribute('aria-hidden', 'true');
+            }, 700);
+        }
+
+        document.body.classList.add('lv-splash-lock');
+        splash.hidden = false;
+        splash.setAttribute('aria-hidden', 'false');
+        // force reflow then animate in
+        void splash.offsetWidth;
+        splash.classList.add('is-on');
+
+        var skip = document.getElementById('lvSplashSkip');
+        if (skip) skip.addEventListener('click', finish);
+        splash.addEventListener('click', function (e) {
+            if (e.target === splash || e.target.classList.contains('lv-splash__glow')) finish();
+        });
+        setTimeout(finish, 2600);
+    })();
+    </script>
+</body>
+</html>

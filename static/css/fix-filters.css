@@ -1,0 +1,60 @@
+/* Fix pour les filtres non cliquables */
+
+/* Assurer que tous les éléments de formulaire sont cliquables */
+.modern-search-container * {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 100;
+}
+
+/* S'assurer que les inputs et selects sont accessibles */
+.filter-select,
+.filter-input,
+.search-input {
+    pointer-events: auto !important;
+    cursor: pointer;
+    z-index: 101;
+    position: relative;
+}
+
+.filter-select:focus,
+.filter-input:focus,
+.search-input:focus {
+    pointer-events: auto !important;
+    z-index: 102;
+}
+
+/* S'assurer que le formulaire lui-même est cliquable */
+.search-form {
+    pointer-events: auto !important;
+    z-index: 100;
+}
+
+/* S'assurer que le conteneur ne bloque pas les clics */
+.modern-search-container {
+    pointer-events: auto !important;
+    z-index: 100;
+}
+
+/* Fix pour le dropdown select */
+.filter-select {
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    appearance: menulist;
+    cursor: pointer;
+}
+
+/* S'assurer qu'aucun overlay ne bloque */
+.hero-search-section::before,
+.hero-search-section::after {
+    pointer-events: none !important;
+}
+
+.hero-content {
+    pointer-events: none;
+}
+
+.hero-content * {
+    pointer-events: auto;
+}
+

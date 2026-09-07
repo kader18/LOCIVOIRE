@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Mon tableau de bord - Locivoire{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Mon tableau de bord</h1>
+    
+    <!-- Bookings Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Mes réservations</h3>
+        </div>
+        <div class="card-body">
+            {% if bookings %}
+                <div class="list-group">
+                    {% for booking in bookings %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <div>
+                                    <h5 class="mb-1">{{ booking.property_obj.title }}</h5>
+                                    <p class="mb-1">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ booking.property_obj.city }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ booking.start_date }} - {{ booking.end_date }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-money-bill-wave me-1"></i>
+                                        {{ booking.total_price|floatformat:0 }} FCFA
+                                    </p>
+                                </div>
+                                <div>
+                                    <span class="badge bg-{% if booking.status == 'approved' %}success{% elif booking.status == 'pending' %}warning{% else %}danger{% endif %} mb-2">
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                    <br>
+                                    <a href="{% url 'bookings:booking_detail' booking.pk %}" 
+                                       class="btn btn-sm btn-primary mt-2">
+                                        Détails
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">Aucune réservation pour le moment. 
+                    <a href="{% url 'properties:property_list' %}">Recherchez une propriété</a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Favorites Section -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="mb-0"><i class="fas fa-heart me-2"></i>Mes favoris</h3>
+        </div>
+        <div class="card-body">
+            {% if favorites %}
+                <div class="row g-4">
+                    {% for favorite in favorites %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100">
+                                {% if favorite.property_obj.images.first %}
+                                    <img src="{{ favorite.property_obj.images.first.image.url }}" 
+                                         class="card-img-top" alt="{{ favorite.property_obj.title }}"
+                                         style="height: 200px; object-fit: cover;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ favorite.property_obj.title }}</h5>
+                                    <p class="text-muted">{{ favorite.property_obj.city }}</p>
+                                    <p class="h6 text-primary">
+                                        {{ favorite.property_obj.price_per_room|floatformat:0 }} FCFA / chambre
+                                    </p>
+                                    <a href="{% url 'properties:property_detail' favorite.property_obj.pk %}" 
+                                       class="btn btn-primary btn-sm">
+                                        Voir
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">Aucun favori pour le moment.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

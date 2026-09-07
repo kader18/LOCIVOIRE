@@ -1,0 +1,789 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Visite 3D - {{ property.title }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script>
+AFRAME.registerComponent('hover-glow', {
+    init: function () {
+        var el = this.el;
+        var origColor = el.getAttribute('color') || '#FFF';
+        el.addEventListener('mouseenter', function () {
+            el.setAttribute('animation__hover', 'property: scale; to: 1.08 1.08 1.08; dur: 200; easing: easeOutQuad');
+        });
+        el.addEventListener('mouseleave', function () {
+            el.setAttribute('animation__hover', 'property: scale; to: 1 1 1; dur: 200; easing: easeOutQuad');
+        });
+    }
+});
+AFRAME.registerComponent('nav-click', {
+    schema: {
+        to: {type: 'string', default: ''},
+        info: {type: 'string', default: ''}
+    },
+    init: function () {
+        var data = this.data;
+        this.el.addEventListener('click', function () {
+            if (data.info) {
+                showInfo(data.info);
+            }
+            if (data.to) {
+                var parts = data.to.split(',').map(Number);
+                moveCam(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
+            }
+        });
+    }
+});
+AFRAME.registerComponent('scroll-zoom', {
+    schema: { speed: { default: 0.8 } },
+    init: function () {
+        var cam = this.el;
+        var self = this;
+        function onWheel(e) {
+            e.preventDefault();
+            var pos = cam.getAttribute('position');
+            var rot = cam.getAttribute('rotation');
+            var rx = THREE.MathUtils.degToRad(rot.x);
+            var ry = THREE.MathUtils.degToRad(rot.y);
+            var speed = (e.deltaY > 0 ? -1 : 1) * self.data.speed;
+            pos.x -= Math.sin(ry) * Math.cos(rx) * speed;
+            pos.y += Math.sin(rx) * speed;
+            pos.z -= Math.cos(ry) * Math.cos(rx) * speed;
+            cam.setAttribute('position', pos);
+        }
+        this.onWheel = onWheel;
+        cam.sceneEl.addEventListener('loaded', function () {
+            var c = cam.sceneEl.canvas;
+            if (c) c.addEventListener('wheel', onWheel, {passive: false});
+        });
+    },
+    remove: function () {
+        var c = this.el.sceneEl.canvas;
+        if (c) c.removeEventListener('wheel', this.onWheel);
+    }
+});
+</script>
+<style>
+    * { box-sizing: border-box; }
+    .ar-demo-container {
+        min-height: 100vh;
+        background: #1a1a2e;
+        color: white;
+        padding: 4rem 0.5rem 0.5rem;
+        overflow-x: hidden;
+    }
+    .ar-header {
+        text-align: center;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .ar-header h1 { font-size: 1.4rem; margin: 0; }
+    .ar-header h2 { font-size: 1rem; margin: 0.3rem 0; opacity: 0.9; }
+    .ar-header p { display: none; }
+    .ar-viewer-wrapper {
+        max-width: 100%;
+        margin: 0 auto 0.5rem;
+        padding: 0.5rem;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+    }
+    .ar-viewer {
+        width: 100%;
+        height: 70vh;
+        min-height: 400px;
+        max-height: 600px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #000;
+        cursor: crosshair;
+    }
+    #info-panel {
+        display: none;
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.9);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        z-index: 100;
+        max-width: 95%;
+        text-align: center;
+        pointer-events: none;
+    }
+    #info-panel .info-title { font-weight: 700; color: #FFD54F; }
+    #info-panel .info-desc { margin-top: 2px; font-size: 0.85rem; opacity: 0.9; }
+    #click-hint {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.8);
+        color: #FFD54F;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        z-index: 100;
+        pointer-events: none;
+    }
+    .ar-controls-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        align-items: center;
+        padding: 0.5rem;
+        background: rgba(0,0,0,0.3);
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+    }
+    .ar-controls-bar .controls-group {
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .ar-controls-bar .controls-group-title {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        opacity: 0.7;
+        width: 100%;
+        margin-bottom: 0.2rem;
+    }
+    .btn-ar {
+        padding: 0.4rem 0.8rem;
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.4);
+        color: white;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-ar:hover { background: rgba(255,255,255,0.3); }
+    .btn-ar.active { background: #4CAF50; border-color: #4CAF50; }
+    .btn-ar i { margin-right: 0.3rem; }
+    .viewer-mode { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+    .viewer-mode .ar-viewer { height: 100%; }
+    .panorama-nav { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 0.5rem; z-index: 50; }
+    .panorama-hint {
+        position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.9); color: #FFD54F; padding: 8px 16px;
+        border-radius: 8px; font-size: 0.8rem; z-index: 60; pointer-events: none;
+    }
+    .ar-details-toggle {
+        text-align: center;
+        margin: 0.5rem 0;
+    }
+    .ar-details-toggle button {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.4);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+    .ar-details-content {
+        display: none;
+        padding: 1rem;
+        background: rgba(255,255,255,0.05);
+        border-radius: 10px;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+    .ar-details-content.show { display: block; }
+    .ar-footer { text-align: center; padding: 0.5rem; }
+    .ar-footer .btn { margin: 0.2rem; font-size: 0.9rem; padding: 0.5rem 1rem; }
+    @media (max-width: 576px) {
+        .ar-header h1 { font-size: 1.1rem; }
+        .ar-controls-bar { flex-direction: column; }
+        .ar-controls-bar .controls-group { width: 100%; justify-content: center; }
+        .btn-ar { padding: 0.35rem 0.6rem; font-size: 0.7rem; }
+        .ar-viewer { min-height: 300px; max-height: 450px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ar-demo-container">
+    <div class="container" style="max-width: 100%;">
+        <div class="ar-header">
+            <h1><i class="fas fa-vr-cardboard"></i> {{ property.title }}</h1>
+            <h2>{{ property.price_per_room|floatformat:0 }} FCFA/chambre · {{ property.city }}</h2>
+        </div>
+
+        <!-- Barre de contrôles compacte -->
+        <div class="ar-controls-bar">
+            <div class="controls-group">
+                <div class="controls-group-title">Mode</div>
+                <button class="btn-ar active" id="btn-mode-3d" onclick="setMode('3d')"><i class="fas fa-cube"></i> 3D</button>
+                {% if has_panoramas %}
+                <button class="btn-ar" id="btn-mode-panorama" onclick="setMode('panorama')"><i class="fas fa-panorama-h"></i> 360°</button>
+                {% endif %}
+                {% if has_videos %}
+                <button class="btn-ar" id="btn-mode-video" onclick="setMode('video')"><i class="fas fa-video"></i> Vidéo</button>
+                {% endif %}
+            </div>
+            <div class="controls-group">
+                <div class="controls-group-title">Où aller</div>
+                <button class="btn-ar" onclick="viewFront()"><i class="fas fa-home"></i> Devant</button>
+                <button class="btn-ar" onclick="viewHall()"><i class="fas fa-door-open"></i> Entrée</button>
+                <button class="btn-ar" onclick="viewBedroom()"><i class="fas fa-bed"></i> Chambre</button>
+                <button class="btn-ar" onclick="viewBathroom()"><i class="fas fa-shower"></i> SdB</button>
+                <button class="btn-ar" onclick="viewLiving()"><i class="fas fa-couch"></i> Salon</button>
+                <button class="btn-ar" onclick="viewKitchen()"><i class="fas fa-utensils"></i> Cuisine</button>
+                <button class="btn-ar" onclick="viewNeighborhood()"><i class="fas fa-city"></i> Vue aérienne</button>
+            </div>
+        </div>
+
+        <div class="ar-viewer-wrapper">
+            <div class="ar-viewer" style="position: relative;">
+                <!-- Vue 3D (mode par défaut) -->
+                <div id="viewer-3d" class="viewer-mode">
+                <a-scene id="scene-3d"
+                    embedded
+                    vr-mode-ui="enabled: false"
+                    renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true;"
+                    style="width: 100%; height: 100%;">
+                    {% if has_videos and videos %}
+                    <a-assets>
+                        <video id="video-src" crossorigin="anonymous" autoplay loop="true" muted playsinline webkit-playsinline>
+                            <source src="{{ videos.0.video.url }}" type="video/mp4">
+                        </video>
+                    </a-assets>
+                    {% endif %}
+                    <a-entity id="camera" camera="fov: 75; near: 0.1; far: 300;"
+                              look-controls="enabled: true; sensitivity: 1.2; reverseMouseDrag: false;"
+                              wasd-controls="enabled: true; acceleration: 25; fly: true;"
+                              scroll-zoom="speed: 0.6"
+                              position="0 12 30">
+                        <a-entity cursor="fuse: false; rayOrigin: mouse;"
+                                  raycaster="objects: .clickable; far: 80;"></a-entity>
+                    </a-entity>
+
+                    <a-light type="ambient" color="#E8E4DC" intensity="0.5"></a-light>
+                    <a-light type="directional" position="10 15 8" intensity="0.8" color="#FFF5E0" castShadow="true"></a-light>
+                    <a-light type="hemisphere" color="#87CEEB" groundColor="#3E7D3E" intensity="0.3"></a-light>
+
+                    <a-sky color="#7EC8E3" radius="150"></a-sky>
+
+                    <!-- ============ TERRAIN ============ -->
+                    <a-plane rotation="-90 0 0" width="120" height="120" color="#4CAF50"></a-plane>
+
+                    <!-- ============ ROUTES ============ -->
+                    <!-- Route principale (devant la maison, axe X) -->
+                    <a-box position="0 0.02 12" width="80" height="0.04" depth="7" color="#424242"></a-box>
+                    <!-- Marquage central route -->
+                    <a-box position="-12 0.05 12" width="3" height="0.01" depth="0.15" color="#FFD54F"></a-box>
+                    <a-box position="-6 0.05 12" width="3" height="0.01" depth="0.15" color="#FFD54F"></a-box>
+                    <a-box position="0 0.05 12" width="3" height="0.01" depth="0.15" color="#FFD54F"></a-box>
+                    <a-box position="6 0.05 12" width="3" height="0.01" depth="0.15" color="#FFD54F"></a-box>
+                    <a-box position="12 0.05 12" width="3" height="0.01" depth="0.15" color="#FFD54F"></a-box>
+
+                    <!-- Route secondaire (axe Z) -->
+                    <a-box position="20 0.02 0" width="6" height="0.04" depth="80" color="#424242"></a-box>
+                    <a-box position="20 0.05 -6" width="0.15" height="0.01" depth="3" color="#FFD54F"></a-box>
+                    <a-box position="20 0.05 0" width="0.15" height="0.01" depth="3" color="#FFD54F"></a-box>
+                    <a-box position="20 0.05 6" width="0.15" height="0.01" depth="3" color="#FFD54F"></a-box>
+
+                    <!-- Trottoirs -->
+                    <a-box position="0 0.04 8" width="60" height="0.08" depth="1.5" color="#BDBDBD"></a-box>
+                    <a-box position="0 0.04 16" width="60" height="0.08" depth="1.5" color="#BDBDBD"></a-box>
+
+                    <!-- ============ MAISON PRINCIPALE (visitable) - Agrandie pour meilleure visite ============ -->
+                    <a-entity id="main-house" position="0 0 0" scale="1.8 1.8 1.8">
+
+                        <!-- Terrain/Jardin de la maison -->
+                        <a-box position="0 0.01 3" width="14" height="0.02" depth="12" color="#66BB6A"></a-box>
+                        <!-- Allee -->
+                        <a-box position="0 0.03 6" width="1.5" height="0.04" depth="4" color="#D7CCC8"></a-box>
+
+                        <!-- Cloture -->
+                        <a-box position="-7 0.4 3" width="0.08" height="0.8" depth="12" color="#8B7355"></a-box>
+                        <a-box position="7 0.4 3" width="0.08" height="0.8" depth="12" color="#8B7355"></a-box>
+                        <a-box position="0 0.4 -3" width="14" height="0.8" depth="0.08" color="#8B7355"></a-box>
+                        <!-- Ouverture portail -->
+                        <a-box position="-3.5 0.4 8" width="7" height="0.8" depth="0.08" color="#8B7355"></a-box>
+                        <a-box position="5.5 0.4 8" width="3" height="0.8" depth="0.08" color="#8B7355"></a-box>
+
+                        <!-- Boite aux lettres - CLIQUABLE -->
+                        <a-cylinder position="1.5 0.6 7.5" radius="0.05" height="1.2" color="#333333"></a-cylinder>
+                        <a-box position="1.5 1.1 7.5" width="0.3" height="0.25" depth="0.2" color="#1565C0"
+                               class="clickable" hover-glow nav-click="info: BOITE AUX LETTRES|Adresse : Rue des Palmiers, Cocody - Abidjan"></a-box>
+
+                        <!-- SOL interieur -->
+                        <a-box position="0 0.06 0" width="10" height="0.12" depth="8" color="#D2A679"></a-box>
+
+                        <!-- MURS EXTERIEURS (couleurs visibles pour meilleure lisibilité) -->
+                        <!-- Mur arriere -->
+                        <a-box position="0 1.7 -4" width="10" height="3.4" depth="0.15" color="#C4B8A8"></a-box>
+                        <!-- Fenetres arriere -->
+                        <a-box position="-3 2 -3.9" width="1.2" height="1" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+                        <a-box position="3 2 -3.9" width="1.2" height="1" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+
+                        <!-- Mur gauche -->
+                        <a-box position="-5 1.7 0" width="0.15" height="3.4" depth="8" color="#B8A88A"></a-box>
+                        <a-box position="-4.9 2 -1.5" width="0.05" height="1" depth="1.2" color="#81D4FA" opacity="0.5"></a-box>
+                        <a-box position="-4.9 2 2" width="0.05" height="1" depth="1" color="#81D4FA" opacity="0.5"></a-box>
+
+                        <!-- Mur droit -->
+                        <a-box position="5 1.7 0" width="0.15" height="3.4" depth="8" color="#B8A88A"></a-box>
+                        <a-box position="4.9 2 1" width="0.05" height="1" depth="1.2" color="#81D4FA" opacity="0.5"></a-box>
+
+                        <!-- Mur avant GAUCHE (avec ouverture porte) -->
+                        <a-box position="-3 1.7 4" width="4" height="3.4" depth="0.15" color="#C4B8A8"></a-box>
+                        <!-- Mur avant DROIT -->
+                        <a-box position="3.5 1.7 4" width="3" height="3.4" depth="0.15" color="#C4B8A8"></a-box>
+                        <!-- Au-dessus de la porte -->
+                        <a-box position="0.75 3.2 4" width="2.5" height="0.6" depth="0.15" color="#C4B8A8"></a-box>
+                        <!-- Fenetre avant gauche -->
+                        <a-box position="-3.5 2 3.9" width="1.2" height="1" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+
+                        <!-- Porte d'entree (ouverte) - CLIQUABLE -->
+                        <a-box position="-0.15 1.4 4.08" width="0.9" height="2.5" depth="0.06" color="#5D4037" rotation="0 30 0"
+                               class="clickable" hover-glow
+                               nav-click="to: 0.9,3,6.3,0,180,0; info: PORTE D'ENTREE|Cliquez pour entrer dans la maison"></a-box>
+                        <a-sphere position="0.2 1.3 4.15" radius="0.04" color="#FFD54F"></a-sphere>
+
+                        <!-- Zone cliquable TOIT (vue aerienne maison) -->
+                        <a-box position="0 3.6 0" width="10" height="0.01" depth="8" opacity="0" class="clickable"
+                               nav-click="to: 0,15,0.1,-80,0,0; info: VUE DU DESSUS|Plan de la maison vu d'en haut"></a-box>
+
+                        <!-- TOIT -->
+                        <a-box position="0 3.5 0" width="11" height="0.15" depth="9" color="#8D6E63" opacity="0.3"></a-box>
+                        <!-- Bord de toit -->
+                        <a-box position="0 3.55 4.5" width="11" height="0.1" depth="0.3" color="#6D4C41"></a-box>
+                        <a-box position="0 3.55 -4.5" width="11" height="0.1" depth="0.3" color="#6D4C41"></a-box>
+
+                        <!-- CLOISONS INTERIEURES -->
+                        <a-box position="0 1.7 0" width="0.1" height="3.4" depth="8" color="#A89880"></a-box>
+                        <a-box position="-2.5 1.7 1.2" width="5" height="3.4" depth="0.1" color="#A89880"></a-box>
+                        <!-- Cloison cuisine/salon avec ouverture -->
+                        <a-box position="3.5 1.7 0.8" width="3" height="3.4" depth="0.1" color="#A89880"></a-box>
+
+                        <!-- Eclairage interieur -->
+                        <a-light type="point" position="-2.5 2.8 -1.5" intensity="0.5" color="#FFF9C4" distance="6"></a-light>
+                        <a-light type="point" position="-2.5 2.8 2.5" intensity="0.4" color="#E0F7FA" distance="6"></a-light>
+                        <a-light type="point" position="2.5 2.8 -1.5" intensity="0.5" color="#FFF9C4" distance="6"></a-light>
+                        <a-light type="point" position="2.5 2.8 2.5" intensity="0.4" color="#FFF9C4" distance="6"></a-light>
+
+                        <!-- ====== CHAMBRE (arriere gauche) ====== -->
+                        <!-- Sol chambre - CLIQUABLE pour entrer -->
+                        <a-box position="-2.8 0.06 -1.5" width="4" height="0.02" depth="4.5" color="#BDA88E"
+                               class="clickable" nav-click="to: -4.5,3,-1.8,0,-30,0; info: CHAMBRE|Chambre principale avec lit double - 15 m2"></a-box>
+                        <!-- Lit - CLIQUABLE -->
+                        <a-box position="-3 0.25 -2.5" width="2" height="0.4" depth="2.2" color="#5D4037"
+                               class="clickable" hover-glow nav-click="info: LIT DOUBLE|Lit 160x200 en bois massif avec matelas a memoire de forme"></a-box>
+                        <a-box position="-3 0.5 -2.5" width="1.8" height="0.15" depth="2" color="#FFFFFF"></a-box>
+                        <a-box position="-3 0.6 -2" width="1.7" height="0.04" depth="1.2" color="#42A5F5"></a-box>
+                        <a-box position="-3 0.85 -3.3" width="2" height="0.6" depth="0.08" color="#4E342E"></a-box>
+                        <a-box position="-3.4 0.63 -3.2" width="0.5" height="0.1" depth="0.3" color="#FFFDE7"></a-box>
+                        <a-box position="-2.6 0.63 -3.2" width="0.5" height="0.1" depth="0.3" color="#FFFDE7"></a-box>
+                        <!-- Table de chevet - CLIQUABLE -->
+                        <a-box position="-4.2 0.3 -3.2" width="0.5" height="0.55" depth="0.4" color="#795548"
+                               class="clickable" hover-glow nav-click="info: TABLE DE CHEVET|Table de chevet en bois avec lampe de lecture"></a-box>
+                        <a-cylinder position="-4.2 0.65 -3.2" radius="0.04" height="0.2" color="#333"></a-cylinder>
+                        <a-cone position="-4.2 0.85 -3.2" radius-bottom="0.15" radius-top="0.05" height="0.2" color="#FFE082"></a-cone>
+                        <a-box position="-1.8 0.3 -3.2" width="0.5" height="0.55" depth="0.4" color="#795548"></a-box>
+                        <!-- Armoire - CLIQUABLE -->
+                        <a-box position="-1 1 0" width="1" height="2" depth="0.6" color="#6D4C41"
+                               class="clickable" hover-glow nav-click="info: ARMOIRE|Grande armoire 2 portes en bois - Rangement vetements"></a-box>
+                        <a-sphere position="-0.85 1 0.32" radius="0.03" color="#FFD54F"></a-sphere>
+                        <a-sphere position="-1.15 1 0.32" radius="0.03" color="#FFD54F"></a-sphere>
+                        <!-- Tapis -->
+                        <a-box position="-2.8 0.08 -1.2" width="1.8" height="0.02" depth="1.2" color="#8D6E63" opacity="0.6"></a-box>
+                        <a-text value="CHAMBRE" position="-2.5 3.2 -1.5" align="center" color="#42A5F5" scale="0.7 0.7 0.7" width="6"></a-text>
+
+                        <!-- ====== SALLE DE BAIN (avant gauche) ====== -->
+                        <!-- Sol salle de bain - CLIQUABLE -->
+                        <a-box position="-2.5 0.06 2.5" width="4.5" height="0.02" depth="2.8" color="#E0F2F1"
+                               class="clickable" nav-click="to: -3.6,3,4.5,0,-45,0; info: SALLE DE BAIN|Salle d'eau complete avec douche italienne - 8 m2"></a-box>
+                        <!-- Douche - CLIQUABLE -->
+                        <a-box position="-4 1 3" width="1.5" height="2" depth="1.5" color="#E0F7FA" opacity="0.15"
+                               class="clickable" hover-glow nav-click="info: DOUCHE ITALIENNE|Cabine de douche en verre trempe avec pommeau effet pluie"></a-box>
+                        <a-box position="-4.7 1 3" width="0.04" height="2" depth="1.5" color="#B2EBF2" opacity="0.4"></a-box>
+                        <a-box position="-4 1 2.3" width="1.5" height="2" depth="0.04" color="#B2EBF2" opacity="0.4"></a-box>
+                        <a-box position="-4 0.12 3" width="1.3" height="0.08" depth="1.3" color="#FAFAFA"></a-box>
+                        <a-cylinder position="-4 2.3 2.35" radius="0.02" height="0.6" color="#BDBDBD"></a-cylinder>
+                        <a-sphere position="-4 2.6 2.35" radius="0.1" color="#CFD8DC"></a-sphere>
+                        <!-- Lavabo - CLIQUABLE -->
+                        <a-box position="-2 0.85 3.5" width="0.8" height="0.07" depth="0.5" color="#FFFFFF"
+                               class="clickable" hover-glow nav-click="info: LAVABO|Vasque en ceramique blanche avec robinet mitigeur chrome"></a-box>
+                        <a-cylinder position="-2 0.45 3.5" radius="0.06" height="0.8" color="#FFF"></a-cylinder>
+                        <a-cylinder position="-2 1.05 3.3" radius="0.02" height="0.3" color="#BDBDBD"></a-cylinder>
+                        <a-box position="-2 1.6 3.85" width="0.7" height="0.9" depth="0.03" color="#B3E5FC" opacity="0.7"></a-box>
+                        <!-- Toilettes - CLIQUABLE -->
+                        <a-box position="-0.8 0.28 3.3" width="0.4" height="0.45" depth="0.6" color="#FFFFFF"
+                               class="clickable" hover-glow nav-click="info: TOILETTES|WC suspendu avec chasse d'eau double flux"></a-box>
+                        <a-box position="-0.8 0.55 3.55" width="0.35" height="0.3" depth="0.12" color="#F5F5F5"></a-box>
+                        <a-box position="-0.8 0.52 3.2" width="0.38" height="0.04" depth="0.45" color="#FAFAFA"></a-box>
+                        <a-text value="SALLE DE BAIN" position="-2.5 3.2 2.5" align="center" color="#26A69A" scale="0.6 0.6 0.6" width="6"></a-text>
+
+                        <!-- ====== SALON (arriere droit) ====== -->
+                        <!-- Sol salon - CLIQUABLE -->
+                        <a-box position="2.5 0.06 -1.5" width="4.5" height="0.02" depth="4.5" color="#BDA88E"
+                               class="clickable" nav-click="to: 4.5,3,-2.7,0,30,0; info: SALON|Salon spacieux avec canape et TV ecran plat - 20 m2"></a-box>
+                        <!-- Canape - CLIQUABLE -->
+                        <a-box position="2.5 0.35 -3" width="2.8" height="0.5" depth="0.9" color="#37474F"
+                               class="clickable" hover-glow nav-click="info: CANAPE 3 PLACES|Canape moelleux en tissu gris avec coussins decoratifs"></a-box>
+                        <a-box position="2.5 0.7 -3.4" width="2.8" height="0.4" depth="0.15" color="#263238"></a-box>
+                        <a-box position="1.2 0.5 -3" width="0.15" height="0.3" depth="0.9" color="#263238"></a-box>
+                        <a-box position="3.8 0.5 -3" width="0.15" height="0.3" depth="0.9" color="#263238"></a-box>
+                        <a-box position="1.8 0.65 -2.9" width="0.55" height="0.15" depth="0.4" color="#FF8A65"></a-box>
+                        <a-box position="3.2 0.65 -2.9" width="0.55" height="0.15" depth="0.4" color="#EF5350"></a-box>
+                        <!-- Table basse - CLIQUABLE -->
+                        <a-box position="2.5 0.3 -1.8" width="1.2" height="0.04" depth="0.6" color="#4E342E"
+                               class="clickable" hover-glow nav-click="info: TABLE BASSE|Table basse en bois d'acajou - Style contemporain"></a-box>
+                        <a-cylinder position="2 0.15 -2.05" radius="0.03" height="0.26" color="#3E2723"></a-cylinder>
+                        <a-cylinder position="3 0.15 -2.05" radius="0.03" height="0.26" color="#3E2723"></a-cylinder>
+                        <a-cylinder position="2 0.15 -1.55" radius="0.03" height="0.26" color="#3E2723"></a-cylinder>
+                        <a-cylinder position="3 0.15 -1.55" radius="0.03" height="0.26" color="#3E2723"></a-cylinder>
+                        <!-- TV - CLIQUABLE -->
+                        <a-box position="2.5 0.4 0" width="1.6" height="0.5" depth="0.35" color="#4E342E"></a-box>
+                        <a-box position="2.5 1.15 -0.05" width="1.6" height="0.9" depth="0.06" color="#1A1A2E"
+                               class="clickable" hover-glow nav-click="info: TELEVISION|TV LED 55 pouces Smart TV - Meuble TV en bois"></a-box>
+                        <a-box position="2.5 1.15 -0.02" width="1.5" height="0.8" depth="0.01" color="#1565C0" opacity="0.8"></a-box>
+                        <!-- Tapis -->
+                        <a-box position="2.5 0.07 -2" width="3" height="0.02" depth="2.5" color="#6D4C41" opacity="0.5"></a-box>
+                        <a-text value="SALON" position="2.5 3.2 -1.5" align="center" color="#EF5350" scale="0.7 0.7 0.7" width="6"></a-text>
+
+                        <!-- ====== CUISINE (avant droite) ====== -->
+                        <!-- Sol cuisine - CLIQUABLE -->
+                        <a-box position="2.5 0.06 2.5" width="4.5" height="0.02" depth="2.8" color="#EFEBE9"
+                               class="clickable" nav-click="to: 4.5,3,3.6,0,45,0; info: CUISINE|Cuisine equipee moderne avec electromenager - 10 m2"></a-box>
+                        <!-- Plan de travail - CLIQUABLE -->
+                        <a-box position="4 0.9 2.5" width="1.6" height="0.05" depth="3" color="#9E9E9E"
+                               class="clickable" hover-glow nav-click="info: PLAN DE TRAVAIL|Plan de travail en granit gris - Rangements integres"></a-box>
+                        <a-box position="4 0.45 2.5" width="1.5" height="0.85" depth="2.9" color="#B8A88A"></a-box>
+                        <!-- Evier - CLIQUABLE -->
+                        <a-box position="4 0.88 1.5" width="0.6" height="0.12" depth="0.4" color="#CFD8DC"
+                               class="clickable" hover-glow nav-click="info: EVIER|Evier inox double bac avec robinet col de cygne"></a-box>
+                        <a-cylinder position="4 1.1 1.3" radius="0.02" height="0.3" color="#BDBDBD"></a-cylinder>
+                        <!-- Cuisiniere - CLIQUABLE -->
+                        <a-box position="4 0.45 3.2" width="0.7" height="0.85" depth="0.6" color="#E0E0E0"
+                               class="clickable" hover-glow nav-click="info: CUISINIERE|Cuisiniere a gaz 4 feux avec four integre"></a-box>
+                        <a-cylinder position="3.85 0.93 3.1" radius="0.1" height="0.02" color="#212121"></a-cylinder>
+                        <a-cylinder position="4.15 0.93 3.1" radius="0.1" height="0.02" color="#212121"></a-cylinder>
+                        <a-cylinder position="3.85 0.93 3.35" radius="0.08" height="0.02" color="#212121"></a-cylinder>
+                        <a-cylinder position="4.15 0.93 3.35" radius="0.08" height="0.02" color="#212121"></a-cylinder>
+                        <!-- Frigo - CLIQUABLE -->
+                        <a-box position="1.2 1 3.2" width="0.8" height="2" depth="0.7" color="#ECEFF1"
+                               class="clickable" hover-glow nav-click="info: REFRIGERATEUR|Refrigerateur-congelateur 2 portes - 300L - Classe A+"></a-box>
+                        <a-cylinder position="1.56 1.3 2.85" radius="0.02" height="0.4" color="#BDBDBD"></a-cylinder>
+                        <!-- Table - CLIQUABLE -->
+                        <a-box position="2.5 0.72 2" width="1" height="0.04" depth="0.8" color="#8D6E63"
+                               class="clickable" hover-glow nav-click="info: TABLE A MANGER|Table en bois pour 2 personnes avec chaises assorties"></a-box>
+                        <a-cylinder position="2.05 0.36 1.65" radius="0.03" height="0.68" color="#795548"></a-cylinder>
+                        <a-cylinder position="2.95 0.36 1.65" radius="0.03" height="0.68" color="#795548"></a-cylinder>
+                        <a-cylinder position="2.05 0.36 2.35" radius="0.03" height="0.68" color="#795548"></a-cylinder>
+                        <a-cylinder position="2.95 0.36 2.35" radius="0.03" height="0.68" color="#795548"></a-cylinder>
+                        <!-- Chaises -->
+                        <a-box position="1.9 0.33 2" width="0.35" height="0.04" depth="0.35" color="#5D4037"></a-box>
+                        <a-box position="1.9 0.55 1.83" width="0.35" height="0.45" depth="0.04" color="#5D4037"></a-box>
+                        <a-box position="3.1 0.33 2" width="0.35" height="0.04" depth="0.35" color="#5D4037"></a-box>
+                        <a-box position="3.1 0.55 2.17" width="0.35" height="0.45" depth="0.04" color="#5D4037"></a-box>
+                        <a-text value="CUISINE" position="2.5 3.2 2.5" align="center" color="#FF8F00" scale="0.7 0.7 0.7" width="6"></a-text>
+
+                    </a-entity>
+
+                    <!-- ============ MAISONS VOISINES ============ -->
+                    <!-- Voisin 1 (gauche) -->
+                    <a-entity position="-16 0 0">
+                        <a-box position="0 0.01 2" width="8" height="0.02" depth="8" color="#66BB6A"></a-box>
+                        <a-box position="0 1.5 0" width="7" height="3" depth="6" color="#FFCCBC"
+                               class="clickable" hover-glow nav-click="to: -16,1.7,5,0,0,0; info: MAISON VOISINE|Villa 3 pieces - 150 000 FCFA/mois"></a-box>
+                        <a-box position="0 3.2 0" width="7.5" height="0.15" depth="6.5" color="#A1887F"></a-box>
+                        <a-box position="0 1 3.01" width="0.8" height="2" depth="0.08" color="#5D4037"></a-box>
+                        <a-box position="-1.5 2 3.01" width="0.8" height="0.8" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+                        <a-box position="1.5 2 3.01" width="0.8" height="0.8" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+                    </a-entity>
+
+                    <!-- Voisin 2 (droite loin) -->
+                    <a-entity position="14 0 -2">
+                        <a-box position="0 0.01 2" width="7" height="0.02" depth="7" color="#66BB6A"></a-box>
+                        <a-box position="0 1.8 0" width="6" height="3.6" depth="5" color="#C8E6C9"
+                               class="clickable" hover-glow nav-click="to: 14,1.7,3,0,0,0; info: VILLA MODERNE|Appartement 4 pieces - 200 000 FCFA/mois"></a-box>
+                        <a-box position="0 3.8 0" width="6.5" height="0.15" depth="5.5" color="#795548"></a-box>
+                        <a-box position="0 1.2 2.51" width="0.8" height="2.2" depth="0.08" color="#4E342E"></a-box>
+                        <a-box position="-1.5 2.2 2.51" width="0.9" height="0.9" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+                    </a-entity>
+
+                    <!-- Voisin 3 (en face, de l'autre cote de la route) -->
+                    <a-entity position="-8 0 22">
+                        <a-box position="0 1.3 0" width="8" height="2.6" depth="5" color="#FFF9C4"
+                               class="clickable" hover-glow nav-click="to: -8,1.7,18,0,0,0; info: RESIDENCE JAUNE|Studio meuble - 80 000 FCFA/mois"></a-box>
+                        <a-box position="0 2.8 0" width="8.5" height="0.15" depth="5.5" color="#8D6E63"></a-box>
+                        <a-box position="0 1 -2.51" width="0.8" height="2" depth="0.08" color="#6D4C41"></a-box>
+                        <a-box position="-2 1.5 -2.51" width="1" height="0.8" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+                        <a-box position="2 1.5 -2.51" width="1" height="0.8" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+                    </a-entity>
+
+                    <!-- Voisin 4 (en face droit) -->
+                    <a-entity position="8 0 23">
+                        <a-box position="0 1.5 0" width="7" height="3" depth="5.5" color="#E1BEE7"
+                               class="clickable" hover-glow nav-click="to: 8,1.7,19,0,0,0; info: VILLA LAVANDE|Duplex 5 pieces - 300 000 FCFA/mois"></a-box>
+                        <a-box position="0 3.2 0" width="7.5" height="0.15" depth="6" color="#6D4C41"></a-box>
+                        <a-box position="1 1 -2.76" width="0.8" height="2" depth="0.08" color="#5D4037"></a-box>
+                        <a-box position="-1.5 1.8 -2.76" width="0.8" height="0.8" depth="0.05" color="#81D4FA" opacity="0.5"></a-box>
+                    </a-entity>
+
+                    <!-- ============ ARBRES ============ -->
+                    <!-- Arbre 1 -->
+                    <a-cylinder position="-7 1.5 7" radius="0.15" height="3" color="#5D4037"></a-cylinder>
+                    <a-sphere position="-7 3.5 7" radius="1.5" color="#2E7D32"></a-sphere>
+                    <!-- Arbre 2 -->
+                    <a-cylinder position="7 1.2 7" radius="0.12" height="2.4" color="#6D4C41"></a-cylinder>
+                    <a-sphere position="7 3 7" radius="1.2" color="#388E3C"></a-sphere>
+                    <!-- Arbre 3 -->
+                    <a-cylinder position="-12 1.8 8" radius="0.18" height="3.6" color="#5D4037"></a-cylinder>
+                    <a-sphere position="-12 4.2 8" radius="1.8" color="#1B5E20"></a-sphere>
+                    <!-- Arbre 4 -->
+                    <a-cylinder position="12 1 8" radius="0.1" height="2" color="#6D4C41"></a-cylinder>
+                    <a-cone position="12 2.8 8" radius-bottom="1" radius-top="0.1" height="2.5" color="#2E7D32"></a-cone>
+                    <!-- Arbre 5 -->
+                    <a-cylinder position="-4 1.2 -5" radius="0.12" height="2.4" color="#5D4037"></a-cylinder>
+                    <a-sphere position="-4 3 -5" radius="1.3" color="#43A047"></a-sphere>
+                    <!-- Arbre 6 -->
+                    <a-cylinder position="10 1.5 -4" radius="0.15" height="3" color="#5D4037"></a-cylinder>
+                    <a-sphere position="10 3.5 -4" radius="1.5" color="#2E7D32"></a-sphere>
+
+                    <!-- ============ LAMPADAIRES ============ -->
+                    <a-cylinder position="-6 2 9" radius="0.06" height="4" color="#757575"></a-cylinder>
+                    <a-sphere position="-6 4 9" radius="0.25" color="#FFF9C4"></a-sphere>
+                    <a-light type="point" position="-6 4 9" intensity="0.3" color="#FFF9C4" distance="8"></a-light>
+
+                    <a-cylinder position="6 2 9" radius="0.06" height="4" color="#757575"></a-cylinder>
+                    <a-sphere position="6 4 9" radius="0.25" color="#FFF9C4"></a-sphere>
+                    <a-light type="point" position="6 4 9" intensity="0.3" color="#FFF9C4" distance="8"></a-light>
+
+                    <!-- ============ VOITURES ============ -->
+                    <!-- Voiture 1 (garee devant) -->
+                    <a-entity position="-4 0 11">
+                        <a-box position="0 0.4 0" width="1.8" height="0.6" depth="4" color="#1565C0"
+                               class="clickable" hover-glow nav-click="info: PARKING|Place de parking privee incluse dans la location"></a-box>
+                        <a-box position="0 0.85 -0.3" width="1.6" height="0.5" depth="2" color="#1976D2"></a-box>
+                        <a-box position="0.78 0.85 -0.3" width="0.02" height="0.45" depth="1.8" color="#90CAF9" opacity="0.5"></a-box>
+                        <a-box position="-0.78 0.85 -0.3" width="0.02" height="0.45" depth="1.8" color="#90CAF9" opacity="0.5"></a-box>
+                        <a-cylinder position="-0.7 0.15 1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                        <a-cylinder position="0.7 0.15 1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                        <a-cylinder position="-0.7 0.15 -1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                        <a-cylinder position="0.7 0.15 -1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                    </a-entity>
+
+                    <!-- Voiture 2 (sur la route) -->
+                    <a-entity position="8 0 13">
+                        <a-box position="0 0.4 0" width="1.8" height="0.6" depth="4" color="#C62828"></a-box>
+                        <a-box position="0 0.85 -0.3" width="1.6" height="0.5" depth="2" color="#D32F2F"></a-box>
+                        <a-cylinder position="-0.7 0.15 1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                        <a-cylinder position="0.7 0.15 1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                        <a-cylinder position="-0.7 0.15 -1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                        <a-cylinder position="0.7 0.15 -1.3" radius="0.25" height="0.15" color="#212121" rotation="0 0 90"></a-cylinder>
+                    </a-entity>
+
+                    <!-- Info propriete -->
+                    <a-text value="{{ property.title }}" position="0 6 0" align="center" color="#FFFFFF" scale="2 2 2" width="12"></a-text>
+                    <a-text value="{{ property.price_per_room|floatformat:0 }} FCFA/chambre - {{ property.city }}" position="0 5.3 0" align="center" color="#FFD700" scale="1.5 1.5 1.5" width="14"></a-text>
+
+
+                    {% if has_photos and photos_normal %}
+                    <!-- Grande photo dans le hall (visible dès l'entrée) -->
+                    <a-image position="0.06 1.7 0" width="2.5" height="1.8" rotation="0 90 0"
+                             src="{{ photos_normal.0.image.url }}" class="clickable" hover-glow
+                             nav-click="info: Photo|{{ photos_normal.0.room.name|default:'Propriété' }}"></a-image>
+                    <!-- Cadres photos sur les murs (galerie 3D) - PLUS GRANDS pour visibilité -->
+                    {% for img in photos_normal|slice:":6" %}
+                    <a-image position="{{ forloop.counter|add:'-3.5' }} 1.5 -3.95" width="1.6" height="1.2" 
+                             src="{{ img.image.url }}" class="clickable" hover-glow
+                             nav-click="info: Photo|{{ img.room.name|default:'Propriété' }}"></a-image>
+                    {% endfor %}
+                    {% endif %}
+                    {% if has_videos and videos %}
+                    <!-- Vidéo diffusée sur l'écran TV du salon -->
+                    <a-video src="#video-src" width="1.5" height="0.85" position="2.5 1.15 -0.02"></a-video>
+                    {% endif %}
+
+                </a-scene>
+                </div>
+
+                {% if has_panoramas and photos_360 %}
+                <!-- Mode Panorama 360 -->
+                <div id="viewer-panorama" class="viewer-mode" style="display:none;">
+                    <div class="panorama-hint">
+                        <i class="fas fa-mouse-pointer"></i> Déplacez la souris pour regarder autour de vous dans cette photo 360° réelle
+                    </div>
+                    <a-scene id="scene-panorama" embedded vr-mode-ui="enabled: false"
+                             renderer="antialias: true;" style="width: 100%; height: 100%;">
+                        <a-entity id="cam-panorama" camera look-controls="reverseMouseDrag: true"
+                                  position="0 1.6 0">
+                            <a-entity cursor="fuse: false; rayOrigin: mouse;"></a-entity>
+                        </a-entity>
+                        <a-sky id="panorama-sky" radius="50" src="{{ photos_360.0.image.url }}"></a-sky>
+                        <!-- Hotspots navigation -->
+                        {% if photos_360|length > 1 %}
+                        <a-entity position="0 0 -3" class="clickable" id="hotspot-prev"
+                                  geometry="primitive: plane; width: 0.5; height: 0.3"
+                                  material="color: #FFD54F; opacity: 0.8"
+                                  nav-click="info: Précédent|Cliquez pour la photo précédente"></a-entity>
+                        <a-entity position="0 0 3" rotation="0 180 0" class="clickable" id="hotspot-next"
+                                  geometry="primitive: plane; width: 0.5; height: 0.3"
+                                  material="color: #FFD54F; opacity: 0.8"
+                                  nav-click="info: Suivant|Cliquez pour la photo suivante"></a-entity>
+                        {% endif %}
+                    </a-scene>
+                    <div class="panorama-nav">
+                        <span id="panorama-counter">1 / {{ photos_360|length }}</span>
+                        <button class="btn-ar btn-sm" onclick="prevPanorama()" {% if photos_360|length <= 1 %}disabled{% endif %}><i class="fas fa-chevron-left"></i></button>
+                        <button class="btn-ar btn-sm" onclick="nextPanorama()" {% if photos_360|length <= 1 %}disabled{% endif %}><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if has_videos and videos %}
+                <!-- Mode Vidéo plein écran -->
+                <div id="viewer-video" class="viewer-mode" style="display:none;">
+                    <div class="panorama-hint" style="top: 50px;">
+                        <i class="fas fa-video"></i> Vidéo de visite guidée du propriétaire
+                    </div>
+                    <video id="fullscreen-video" controls playsinline style="width:100%; height:100%; object-fit: contain; background:#000;">
+                        <source src="{{ videos.0.video.url }}" type="video/mp4">
+                        Votre navigateur ne supporte pas la vidéo.
+                    </video>
+                    <button class="btn-ar" style="position:absolute; top:10px; right:10px; z-index:10;" onclick="setMode('3d')">
+                        <i class="fas fa-times me-2"></i>Fermer
+                    </button>
+                </div>
+                {% endif %}
+
+                <div id="click-hint"><i class="fas fa-mouse-pointer"></i> Glissez la souris pour regarder · Molette : avancer/reculer · Clic sur objet : infos</div>
+                <div id="info-panel">
+                    <div class="info-title" id="info-title"></div>
+                    <div class="info-desc" id="info-desc"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ar-details-toggle">
+            <button type="button" onclick="document.getElementById('ar-details').classList.toggle('show')">
+                <i class="fas fa-chevron-down"></i> Détails & infos
+            </button>
+        </div>
+        <div id="ar-details" class="ar-details-content">
+            <p><strong>Type:</strong> {{ property.get_property_type_display }} · <strong>Pièces:</strong> {{ property.number_of_rooms }} · <strong>Chambres:</strong> {{ property.number_of_bedrooms }}</p>
+            <p><strong>Équipements:</strong> Lit double, douche, canapé + TV, cuisine équipée, parking</p>
+        </div>
+
+        <div class="ar-footer">
+            <a href="{% url 'properties:property_detail' property.pk %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            {% if user.is_tenant %}
+            <a href="{% url 'bookings:create_booking' property.pk %}" class="btn btn-success btn-sm">
+                <i class="fas fa-calendar-check"></i> Réserver
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+var cam;
+var infoTimer;
+var panoramaUrls = [{% if has_panoramas and photos_360 %}{% for img in photos_360 %}'{{ img.image.url|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}[]{% endif %}];
+var panoramaIndex = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() { cam = document.querySelector('#camera'); }, 300);
+    setTimeout(function() {
+        var h = document.getElementById('click-hint');
+        if (h) h.style.opacity = '0.5';
+    }, 4000);
+    setTimeout(function() {
+        var h = document.getElementById('click-hint');
+        if (h) h.style.display = 'none';
+    }, 8000);
+});
+
+function setMode(mode) {
+    var v3d = document.getElementById('viewer-3d');
+    var vpan = document.getElementById('viewer-panorama');
+    var vvid = document.getElementById('viewer-video');
+    var btn3d = document.getElementById('btn-mode-3d');
+    var btnpan = document.getElementById('btn-mode-panorama');
+    var btnvid = document.getElementById('btn-mode-video');
+    if (v3d) v3d.style.display = (mode === '3d') ? 'block' : 'none';
+    if (vpan) vpan.style.display = (mode === 'panorama') ? 'block' : 'none';
+    if (vvid) vvid.style.display = (mode === 'video') ? 'block' : 'none';
+    if (btn3d) { btn3d.classList.toggle('active', mode === '3d'); }
+    if (btnpan) { btnpan.classList.toggle('active', mode === 'panorama'); }
+    if (btnvid) { btnvid.classList.toggle('active', mode === 'video'); }
+    if (mode === 'video' && document.getElementById('fullscreen-video')) {
+        document.getElementById('fullscreen-video').play();
+    }
+    if (mode !== 'video' && document.getElementById('fullscreen-video')) {
+        document.getElementById('fullscreen-video').pause();
+    }
+}
+
+function prevPanorama() {
+    if (panoramaUrls.length <= 1) return;
+    panoramaIndex = (panoramaIndex - 1 + panoramaUrls.length) % panoramaUrls.length;
+    var sky = document.getElementById('panorama-sky');
+    if (sky) sky.setAttribute('src', panoramaUrls[panoramaIndex]);
+    var cnt = document.getElementById('panorama-counter');
+    if (cnt) cnt.textContent = (panoramaIndex + 1) + ' / ' + panoramaUrls.length;
+}
+
+function nextPanorama() {
+    if (panoramaUrls.length <= 1) return;
+    panoramaIndex = (panoramaIndex + 1) % panoramaUrls.length;
+    var sky = document.getElementById('panorama-sky');
+    if (sky) sky.setAttribute('src', panoramaUrls[panoramaIndex]);
+    var cnt = document.getElementById('panorama-counter');
+    if (cnt) cnt.textContent = (panoramaIndex + 1) + ' / ' + panoramaUrls.length;
+}
+
+function moveCam(x, y, z, rx, ry, rz) {
+    if (!cam) cam = document.querySelector('#camera');
+    if (!cam) return;
+    var animId = 'pos_' + Date.now();
+    cam.setAttribute('animation__' + animId, {
+        property: 'position',
+        to: x + ' ' + y + ' ' + z,
+        dur: 500,
+        easing: 'easeInOutQuad'
+    });
+    cam.setAttribute('rotation', rx + ' ' + ry + ' ' + rz);
+}
+
+function showInfo(raw) {
+    var parts = raw.split('|');
+    var title = parts[0] || '';
+    var desc = parts[1] || '';
+    var panel = document.getElementById('info-panel');
+    document.getElementById('info-title').textContent = title;
+    document.getElementById('info-desc').textContent = desc;
+    panel.style.display = 'block';
+    panel.style.animation = 'none';
+    panel.offsetHeight;
+    panel.style.animation = 'fadeInUp 0.3s ease';
+    clearTimeout(infoTimer);
+    infoTimer = setTimeout(function() { panel.style.display = 'none'; }, 4000);
+}
+
+function viewNeighborhood() { moveCam(0, 28, 22, -40, 0, 0); showInfo('VUE AERIENNE|Vue d\'ensemble du quartier et de la propriete'); }
+function viewStreet()       { moveCam(14, 3, 14, 0, -90, 0); showInfo('VUE RUE|Promenez-vous dans la rue du quartier'); }
+function viewFront()        { moveCam(0, 3, 12, 0, 0, 0); showInfo('DEVANT LA MAISON|Facade principale - Cliquez sur la porte pour entrer'); }
+function viewHall()         { moveCam(0.9, 3, 6.3, 0, 180, 0); showInfo('ENTREE|Hall d\'entree - Cliquez sur les pieces pour les visiter'); }
+function viewBedroom()      { moveCam(-4.5, 3, -1.8, 0, -30, 0); showInfo('CHAMBRE|Cliquez sur les meubles pour voir les details'); }
+function viewBathroom()     { moveCam(-3.6, 3, 4.5, 0, -45, 0); showInfo('SALLE DE BAIN|Cliquez sur les equipements pour plus d\'infos'); }
+function viewLiving()       { moveCam(4.5, 3, -2.7, 0, 30, 0); showInfo('SALON|Cliquez sur le canape ou la TV pour les details'); }
+function viewKitchen()      { moveCam(4.5, 3, 3.6, 0, 45, 0); showInfo('CUISINE|Cliquez sur l\'electromenager pour les specifications'); }
+</script>
+{% endblock %}

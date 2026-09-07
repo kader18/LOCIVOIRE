@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mon profil — Locivoire{% endblock %}
+
+{% block extra_css %}
+<style>
+  .pf {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+  .pf-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .pf-main {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .pf-hero {
+    position: relative;
+    padding: 28px 28px 24px;
+    background:
+      radial-gradient(ellipse at 85% 20%, rgba(217, 164, 65, 0.18), transparent 45%),
+      linear-gradient(135deg, #101A30 0%, #1B2A4A 55%, #243656 100%);
+    color: #fff;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    align-items: center;
+  }
+  .pf-avatar {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 3px solid rgba(217, 164, 65, 0.55);
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pf-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pf-avatar i {
+    font-size: 2.6rem;
+    color: rgba(255,255,255,0.4);
+  }
+  .pf-hero__info { min-width: 0; flex: 1; }
+  .pf-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 6px;
+  }
+  .pf-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(1.5rem, 2.5vw, 1.95rem);
+    margin: 0 0 10px;
+    line-height: 1.15;
+  }
+  .pf-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pf-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  .pf-tag--ok {
+    background: rgba(47, 111, 107, 0.35);
+    border-color: rgba(47, 111, 107, 0.5);
+  }
+  .pf-tag--warn {
+    background: rgba(196, 123, 43, 0.35);
+    border-color: rgba(196, 123, 43, 0.55);
+  }
+  .pf-username {
+    margin: 10px 0 0;
+    font-size: 0.85rem;
+    opacity: 0.65;
+  }
+
+  .pf-body { padding: 24px 26px 28px; }
+
+  .pf-section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.15rem;
+    color: var(--navy-deep);
+    margin: 0 0 14px;
+  }
+  .pf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pf-tile {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: rgba(27, 42, 74, 0.02);
+  }
+  .pf-tile__label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+  .pf-tile__label i { color: var(--gold-deep); }
+  .pf-tile__value {
+    margin: 0;
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+
+  .pf-block + .pf-block {
+    margin-top: 22px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+  }
+
+  .pf-note {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(196, 123, 43, 0.1);
+    border: 1px solid rgba(196, 123, 43, 0.28);
+    color: var(--ink);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .pf-note a { color: var(--gold-deep); font-weight: 600; }
+
+  .pf-side {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .pf-actions {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .pf-actions h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+    color: var(--navy-deep);
+    margin: 0 0 14px;
+  }
+  .pf-actions a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--navy-deep) !important;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .pf-actions a:last-child { margin-bottom: 0; }
+  .pf-actions a i {
+    width: 18px;
+    text-align: center;
+    color: var(--gold-deep);
+  }
+  .pf-actions a:hover {
+    border-color: rgba(217, 164, 65, 0.5);
+    background: rgba(217, 164, 65, 0.08);
+  }
+  .pf-actions a.is-danger {
+    color: #9B3B3B !important;
+  }
+  .pf-actions a.is-danger i { color: #9B3B3B; }
+
+  .pf-summary {
+    background: linear-gradient(165deg, #101A30 0%, #1B2A4A 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 18px 20px;
+  }
+  .pf-summary__label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 6px;
+  }
+  .pf-summary p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: rgba(255,255,255,0.78);
+  }
+
+  @media (max-width: 900px) {
+    .pf-layout { grid-template-columns: 1fr; }
+    .pf-side { position: static; }
+    .pf-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pf">
+    <div class="pf-layout">
+        <article class="pf-main">
+            <header class="pf-hero">
+                <div class="pf-avatar">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Photo de profil de {{ user.get_full_name|default:user.username }}">
+                    {% else %}
+                        <i class="fas fa-user" aria-hidden="true"></i>
+                    {% endif %}
+                </div>
+                <div class="pf-hero__info">
+                    <p class="pf-eyebrow">Locivoire · Compte</p>
+                    <h1 class="pf-name">{{ user.get_full_name|default:user.username }}</h1>
+                    <div class="pf-tags">
+                        <span class="pf-tag">
+                            <i class="fas fa-{% if user.is_platform_admin %}shield-alt{% elif user.is_owner %}home{% else %}key{% endif %}" aria-hidden="true"></i>
+                            {{ user.get_user_type_display }}
+                        </span>
+                        {% if user.is_verified %}
+                            <span class="pf-tag pf-tag--ok">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                                Compte vérifié
+                            </span>
+                        {% elif user.is_owner %}
+                            <span class="pf-tag pf-tag--warn">
+                                <i class="fas fa-clock" aria-hidden="true"></i>
+                                En attente de validation
+                            </span>
+                        {% endif %}
+                    </div>
+                    <p class="pf-username">@{{ user.username }}</p>
+                </div>
+            </header>
+
+            <div class="pf-body">
+                <div class="pf-block">
+                    <h2 class="pf-section-title">Informations personnelles</h2>
+                    <div class="pf-grid">
+                        <div class="pf-tile">
+                            <p class="pf-tile__label"><i class="fas fa-envelope" aria-hidden="true"></i> Email</p>
+                            <p class="pf-tile__value">{{ user.email|default:"—" }}</p>
+                        </div>
+                        <div class="pf-tile">
+                            <p class="pf-tile__label"><i class="fas fa-phone" aria-hidden="true"></i> Téléphone</p>
+                            <p class="pf-tile__value">{{ user.phone|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="pf-tile">
+                            <p class="pf-tile__label"><i class="fas fa-cake-candles" aria-hidden="true"></i> Date de naissance</p>
+                            <p class="pf-tile__value">{% if user.date_of_birth %}{{ user.date_of_birth|date:"j F Y" }}{% else %}Non renseignée{% endif %}</p>
+                        </div>
+                        <div class="pf-tile">
+                            <p class="pf-tile__label"><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Lieu de naissance</p>
+                            <p class="pf-tile__value">{{ user.place_of_birth|default:"Non renseigné" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pf-block">
+                    <h2 class="pf-section-title">Compte</h2>
+                    <div class="pf-grid">
+                        <div class="pf-tile">
+                            <p class="pf-tile__label"><i class="fas fa-calendar-plus" aria-hidden="true"></i> Membre depuis</p>
+                            <p class="pf-tile__value">{{ user.date_joined|date:"j F Y" }}</p>
+                        </div>
+                        <div class="pf-tile">
+                            <p class="pf-tile__label"><i class="fas fa-clock" aria-hidden="true"></i> Dernière connexion</p>
+                            <p class="pf-tile__value">{% if user.last_login %}{{ user.last_login|date:"j F Y à H:i" }}{% else %}Jamais{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if user.is_owner and not user.is_verified %}
+                <div class="pf-block">
+                    <h2 class="pf-section-title">Validation prestataire</h2>
+                    <p class="pf-note">
+                        Votre compte prestataire n’est pas encore validé. Vous pourrez publier des biens après validation par l’équipe Locivoire.
+                        <a href="{% url 'properties:property_list' %}#contact">Nous contacter</a>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </article>
+
+        <aside class="pf-side">
+            <div class="pf-summary">
+                <p class="pf-summary__label">Rôle</p>
+                <p>
+                    {% if user.is_platform_admin %}
+                        Accès administration Locivoire.
+                    {% elif user.is_owner %}
+                        Vous gérez vos biens et les demandes de location.
+                    {% else %}
+                        Vous recherchez et réservez des logements.
+                    {% endif %}
+                </p>
+            </div>
+
+            <nav class="pf-actions" aria-label="Raccourcis profil">
+                <h2>Raccourcis</h2>
+                {% if user.is_platform_admin %}
+                    <a href="{% url 'accounts:staff_dashboard' %}"><i class="fas fa-shield-alt" aria-hidden="true"></i> Espace admin</a>
+                {% elif user.is_owner %}
+                    <a href="{% url 'properties:owner_dashboard' %}"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Tableau de bord</a>
+                {% else %}
+                    <a href="{% url 'properties:tenant_dashboard' %}"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Mon espace</a>
+                {% endif %}
+                {% if not user.is_platform_admin %}
+                    <a href="{% url 'bookings:booking_list' %}"><i class="fas fa-calendar-check" aria-hidden="true"></i> Réservations</a>
+                {% endif %}
+                <a href="{% url 'properties:property_list' %}"><i class="fas fa-search" aria-hidden="true"></i> Rechercher</a>
+                <a href="{% url 'properties:property_list' %}#contact"><i class="fas fa-envelope" aria-hidden="true"></i> Contact</a>
+                <a class="is-danger" href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Déconnexion</a>
+            </nav>
+        </aside>
+    </div>
+</div>
+{% endblock %}

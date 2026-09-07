@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Choisissez votre profil — Locivoire{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .ps {
+    min-height: calc(100vh - 120px);
+    background:
+      radial-gradient(ellipse at 18% 20%, rgba(217, 164, 65, 0.18) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 75%, rgba(47, 111, 107, 0.16) 0%, transparent 40%),
+      linear-gradient(165deg, #101A30 0%, #1B2A4A 55%, #152438 100%);
+    color: #fff;
+    padding: 48px 20px 64px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ps__flag {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    display: flex;
+  }
+  .ps__flag span { flex: 1; }
+  .ps__flag .o { background: #F77F00; }
+  .ps__flag .w { background: #fff; }
+  .ps__flag .g { background: #009E60; }
+
+  .ps__inner {
+    max-width: 920px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ps__brand {
+    text-align: center;
+    margin-bottom: 36px;
+    animation: ps-rise 0.7s ease both;
+  }
+  .ps__eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .ps__brand h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(2rem, 4.5vw, 2.85rem);
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    line-height: 1.15;
+  }
+  .ps__brand h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .ps__brand p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 1.02rem;
+  }
+
+  .ps__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    animation: ps-rise 0.75s ease 0.12s both;
+  }
+
+  .ps-choice {
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    padding: 28px 26px 24px;
+    border-radius: 18px;
+    text-decoration: none !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .ps-choice::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+  .ps-choice:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+  }
+  .ps-choice:hover::before { opacity: 1; }
+
+  .ps-choice--tenant {
+    border-color: rgba(47, 111, 107, 0.45);
+  }
+  .ps-choice--tenant::before {
+    background: linear-gradient(160deg, rgba(47, 111, 107, 0.28), transparent 60%);
+  }
+  .ps-choice--tenant:hover {
+    border-color: rgba(47, 111, 107, 0.85);
+    background: rgba(47, 111, 107, 0.18);
+  }
+
+  .ps-choice--owner {
+    border-color: rgba(217, 164, 65, 0.45);
+  }
+  .ps-choice--owner::before {
+    background: linear-gradient(160deg, rgba(217, 164, 65, 0.28), transparent 60%);
+  }
+  .ps-choice--owner:hover {
+    border-color: rgba(217, 164, 65, 0.9);
+    background: rgba(217, 164, 65, 0.12);
+  }
+
+  .ps-choice__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+    margin-bottom: 22px;
+  }
+  .ps-choice--tenant .ps-choice__icon {
+    background: rgba(47, 111, 107, 0.35);
+    color: #9fd4cf;
+  }
+  .ps-choice--owner .ps-choice__icon {
+    background: rgba(217, 164, 65, 0.28);
+    color: var(--gold);
+  }
+
+  .ps-choice__label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-bottom: 6px;
+  }
+  .ps-choice h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.75rem;
+    margin: 0 0 10px;
+  }
+  .ps-choice p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.5;
+    flex: 1;
+  }
+  .ps-choice__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .ps-choice__perks {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ps-choice__perks li {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(217, 164, 65, 0.18);
+    border: 1px solid rgba(217, 164, 65, 0.35);
+    color: #f0d48a;
+  }
+  .ps-choice--tenant .ps-choice__cta { color: #9fd4cf; }
+  .ps-choice--owner .ps-choice__cta { color: var(--gold); }
+  .ps-choice:hover .ps-choice__cta i {
+    transform: translateX(4px);
+  }
+  .ps-choice__cta i {
+    transition: transform 0.2s ease;
+  }
+
+  .ps__foot {
+    text-align: center;
+    margin-top: 36px;
+    color: rgba(255, 255, 255, 0.65);
+    animation: ps-rise 0.7s ease 0.25s both;
+  }
+  .ps__foot a {
+    color: var(--gold) !important;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .ps__foot a:hover { text-decoration: underline; }
+
+  @keyframes ps-rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 720px) {
+    .ps { padding: 36px 16px 48px; }
+    .ps__grid { grid-template-columns: 1fr; gap: 14px; }
+    .ps-choice { min-height: 0; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="ps">
+    <div class="ps__flag" aria-hidden="true"><span class="o"></span><span class="w"></span><span class="g"></span></div>
+    <div class="ps__inner">
+        <div class="ps__brand">
+            <p class="ps__eyebrow">Locivoire · Côte d'Ivoire</p>
+            <h1>Qui êtes-<em>vous</em> ?</h1>
+            <p>Choisissez votre profil pour créer votre compte</p>
+        </div>
+
+        <div class="ps__grid">
+            <a class="ps-choice ps-choice--tenant" href="{% url 'accounts:register_tenant' %}">
+                <span class="ps-choice__icon"><i class="fas fa-key" aria-hidden="true"></i></span>
+                <span class="ps-choice__label">Je loue</span>
+                <h2>Locataire</h2>
+                <p>Je cherche une maison ou un appartement à louer, avec photos et visites immersives.</p>
+                <span class="ps-choice__cta">Continuer <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            </a>
+
+            <a class="ps-choice ps-choice--owner" href="{% url 'accounts:register_owner' %}">
+                <span class="ps-choice__icon"><i class="fas fa-home" aria-hidden="true"></i></span>
+                <span class="ps-choice__label">Je propose</span>
+                <h2>Prestataire</h2>
+                <p>Propriétaire ou petite agence&nbsp;: publiez vos biens, ajoutez une visite immersive, validez vos locataires — sans perdre un mois de loyer à chaque location.</p>
+                <ul class="ps-choice__perks">
+                    <li>Visite immersive</li>
+                    <li>Vous gardez le contrôle</li>
+                    <li>Compte vérifié</li>
+                </ul>
+                <span class="ps-choice__cta">Continuer <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            </a>
+        </div>
+
+        <p class="ps__foot">
+            Déjà un compte ?
+            <a href="{% url 'accounts:login' %}">Connectez-vous</a>
+        </p>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Locivoire — Trouvez votre maison idéale en Côte d'Ivoire{% endblock %}
+
+{% block body_attrs %}data-lv-splash="home"{% endblock %}
+
+{% block footer_modifier %} lv-footer--contact{% endblock %}
+{% block footer_attrs %}id="contact"{% endblock %}
+
+{% block footer_contact %}
+<div class="lv-footer__contact">
+    <div class="lv-footer__aside">
+        <p class="lv-footer__eyebrow">Locivoire · Côte d’Ivoire</p>
+        <h2 class="lv-footer__title">Écrivons-nous</h2>
+        <p class="lv-footer__lead">Une question sur un bien, un compte propriétaire, un partenariat&nbsp;? Notre équipe répond sous 48&nbsp;h ouvrées.</p>
+
+        <ul class="lv-footer__channels">
+            <li>
+                <span class="lv-footer__channel-label">Délai</span>
+                <span class="lv-footer__channel-value">Réponse sous 48&nbsp;h ouvrées</span>
+            </li>
+            <li>
+                <span class="lv-footer__channel-label">Pour qui</span>
+                <span class="lv-footer__channel-value">Locataires, propriétaires &amp; partenaires</span>
+            </li>
+            <li>
+                <span class="lv-footer__channel-label">Sujets</span>
+                <span class="lv-footer__channel-value">Visite immersive, publication, support</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="lv-footer__form-card">
+        <h3>Envoyer un message</h3>
+        <form method="post" action="{% url 'accounts:contact' %}" class="lv-footer__form" id="lvContactForm">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'properties:property_list' %}#contact">
+            <div class="lv-footer__form-row">
+                <div>
+                    <label for="lv-ct-name">Nom</label>
+                    <input id="lv-ct-name" name="name" required placeholder="Votre nom complet" autocomplete="name"
+                           value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+                </div>
+                <div>
+                    <label for="lv-ct-email">Email</label>
+                    <input id="lv-ct-email" type="email" name="email" required placeholder="vous@exemple.com" autocomplete="email"
+                           value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
+                </div>
+            </div>
+            <label for="lv-ct-message">Message</label>
+            <textarea id="lv-ct-message" name="message" rows="5" required placeholder="Décrivez votre demande…"></textarea>
+            <input type="hidden" name="phone" value="">
+            <button type="submit" class="btn-gold lv-footer__submit">Envoyer <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="lv-hero">
+    <svg class="lv-hero-skyline" viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 140 L0 120 L40 120 L40 90 L70 90 L70 130 L110 130 L110 70 L130 70 L130 50 L150 50 L150 100 L190 100 L190 110 L230 110 L230 60 L245 60 L245 40 L260 40 L260 60 L275 60 L275 115 L320 115 L320 80 L340 80 L340 130 L390 130 L390 100 L420 100 L420 140 L470 140 L470 55 L490 55 L490 30 L505 30 L505 55 L520 55 L520 140 L570 140 L570 95 L600 95 L600 140 L650 140 L650 65 L670 65 L670 45 L690 45 L690 65 L705 65 L705 140 L760 140 L760 100 L790 100 L790 140 L850 140 L850 75 L870 75 L870 140 L920 140 L920 110 L950 110 L950 140 L1010 140 L1010 60 L1030 60 L1030 40 L1045 40 L1045 60 L1060 60 L1060 140 L1120 140 L1120 90 L1150 90 L1150 140 L1210 140 L1210 100 L1240 100 L1240 140 L1300 140 L1300 70 L1320 70 L1320 140 L1440 140 L1440 160 L0 160 Z" fill="#132038"/>
+        <path d="M0 145 Q 60 130 120 145 T 240 145 T 360 145 T 480 145 T 600 145 T 720 145 T 840 145 T 960 145 T 1080 145 T 1200 145 T 1320 145 T 1440 145 L1440 160 L0 160 Z" fill="#D9A441" opacity="0.18"/>
+    </svg>
+
+    <div class="lv-hero-inner">
+        <span class="lv-eyebrow">Abidjan · Bouaké · Yamoussoukro · San-Pédro</span>
+        <h1>Trouvez votre <em>maison idéale</em>,<br>quartier par quartier.</h1>
+        <p>Des logements vérifiés en Côte d'Ivoire, avec photos réelles et visites virtuelles immersives — sans casque VR.</p>
+    </div>
+
+    <div class="lv-search-card" id="lv-search">
+        <form method="get" action="{% url 'properties:property_list' %}">
+            <div class="lv-search-row">
+                <input class="lv-f-keyword" type="text" name="search"
+                       placeholder="Rechercher une propriété, un quartier..."
+                       value="{{ search_query }}">
+                <select class="lv-f-type" name="property_type">
+                    <option value="">Tous les types</option>
+                    {% for value, label in PROPERTY_TYPES %}
+                        <option value="{{ value }}" {% if property_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <input class="lv-f-price" type="number" name="min_price" placeholder="Prix min" value="{{ min_price }}">
+                <input class="lv-f-price" type="number" name="max_price" placeholder="Prix max" value="{{ max_price }}">
+                <button type="submit" class="btn-gold"><i class="fas fa-search"></i> Rechercher</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="lv-chip-row">
+        {% for chip in city_chips %}
+            <a class="lv-chip" href="?city={{ chip|urlencode }}">{{ chip }}</a>
+        {% empty %}
+            <a class="lv-chip" href="?city=Abidjan">Abidjan</a>
+            <a class="lv-chip" href="?city=Cocody">Cocody</a>
+            <a class="lv-chip" href="?city=Yopougon">Yopougon</a>
+            <a class="lv-chip" href="?city=Bouaké">Bouaké</a>
+            <a class="lv-chip" href="?city=Yamoussoukro">Yamoussoukro</a>
+        {% endfor %}
+    </div>
+</section>
+
+{# Carte Côte d'Ivoire uniquement #}
+<section class="lv-map-section">
+    <div style="max-width:1280px;margin:0 auto;padding:0 48px 8px;">
+        <div class="lv-section-head">
+            <h2>Carte des biens en Côte d'Ivoire</h2>
+            <span class="lv-section-count">{{ total_count }} biens disponibles</span>
+        </div>
+        <div class="lv-section-underline"></div>
+        <p style="color:#9AA3B5;font-size:0.9rem;margin:-16px 0 20px;">
+            Zoomez pour voir l'emplacement exact de chaque maison dans sa ville.
+            Cliquez un point or pour afficher les infos.
+        </p>
+    </div>
+
+    <div class="lv-map-layout lv-map-layout--full">
+        <div class="lv-map-canvas lv-map-canvas--tall">
+            <div id="ci-map"></div>
+        </div>
+    </div>
+</section>
+
+{# Listings #}
+<div class="lv-section">
+    <div class="lv-section-head">
+        <h2>Découvrez les meilleures maisons</h2>
+        <span class="lv-section-count">{{ total_count }} biens disponibles</span>
+    </div>
+    <div class="lv-section-underline"></div>
+
+    {% if properties %}
+        <div class="lv-grid">
+            {% for property in properties %}
+                <article class="lv-prop-card">
+                    <div class="lv-prop-media">
+                        {% with normals=property.card_images %}
+                        {% if normals %}
+                            <div class="lv-carousel" data-carousel>
+                                <div class="lv-carousel__track">
+                                    {% for img in normals %}
+                                        <img src="{{ img.image.url }}" alt="{{ property.title }} — {{ forloop.counter }}" class="{% if forloop.first %}is-active{% endif %}" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+                                    {% endfor %}
+                                </div>
+                                {% if normals|length > 1 %}
+                                <button type="button" class="lv-carousel__nav prev" data-carousel-prev aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
+                                <button type="button" class="lv-carousel__nav next" data-carousel-next aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
+                                <div class="lv-carousel__dots" data-carousel-dots></div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <svg class="skyline-fallback" viewBox="0 0 300 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M0 80 L0 60 L20 60 L20 40 L35 40 L35 70 L55 70 L55 30 L65 30 L65 15 L75 15 L75 50 L100 50 L100 60 L120 60 L120 25 L130 25 L130 10 L140 10 L140 25 L150 25 L150 70 L180 70 L180 45 L195 45 L195 80 L220 80 L220 20 L232 20 L232 5 L242 5 L242 20 L252 20 L252 80 L300 80 L300 90 L0 90 Z" fill="rgba(217,164,65,0.5)"/>
+                            </svg>
+                        {% endif %}
+                        {% endwith %}
+                        <span class="lv-prop-price mono">{{ property.price_per_room|floatformat:0 }} FCFA</span>
+                        <span class="lv-prop-tag"><i class="fas fa-map-marker-alt"></i> {{ property.city }}</span>
+                    </div>
+                    <div class="lv-prop-body">
+                        <h3 class="lv-prop-title">{{ property.title }}</h3>
+                        <div class="lv-prop-loc">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ property.city }}{% if property.address %}, {{ property.address|truncatechars:28 }}{% endif %}
+                        </div>
+                        <div class="lv-prop-meta">
+                            <span><i class="fas fa-bed"></i> {{ property.number_of_rooms }} pièces</span>
+                            <span><i class="fas fa-bath"></i> {{ property.number_of_bathrooms }} sdb</span>
+                            {% if property.area %}
+                            <span><i class="fas fa-ruler-combined"></i> {{ property.area }} m²</span>
+                            {% endif %}
+                        </div>
+                        <div class="lv-prop-actions">
+                            <a class="lv-btn-3d" href="{% url 'bookings:ar_demo' property.pk %}">
+                                <i class="fas fa-cube"></i> Visite 3D
+                            </a>
+                            <a class="lv-prop-link" href="{% url 'properties:property_detail' property.pk %}">
+                                Détails <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+
+        {% if properties.has_other_pages %}
+            <nav class="lv-pager" aria-label="Pagination des biens">
+                {% if properties.has_previous %}
+                    <a class="lv-pager__btn" href="?page={{ properties.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if city %}&city={{ city }}{% endif %}{% if property_type %}&property_type={{ property_type }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                        <span>Précédent</span>
+                    </a>
+                {% else %}
+                    <span class="lv-pager__btn is-disabled" aria-disabled="true">
+                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                        <span>Précédent</span>
+                    </span>
+                {% endif %}
+
+                <p class="lv-pager__status">
+                    <span class="lv-pager__label">Page</span>
+                    <strong>{{ properties.number }}</strong>
+                    <span class="lv-pager__sep">/</span>
+                    <span>{{ properties.paginator.num_pages }}</span>
+                </p>
+
+                {% if properties.has_next %}
+                    <a class="lv-pager__btn lv-pager__btn--next" href="?page={{ properties.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if city %}&city={{ city }}{% endif %}{% if property_type %}&property_type={{ property_type }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+                        <span>Suivant</span>
+                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                    </a>
+                {% else %}
+                    <span class="lv-pager__btn lv-pager__btn--next is-disabled" aria-disabled="true">
+                        <span>Suivant</span>
+                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                    </span>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <p class="text-muted mb-2"><i class="fas fa-home fa-2x" style="opacity:0.4;"></i></p>
+            <h4 class="font-display">Aucune propriété trouvée</h4>
+            <p class="text-muted">Modifiez vos critères ou explorez une autre ville ivoirienne.</p>
+            <a href="{% url 'properties:property_list' %}" class="btn-solid mt-2">Voir tous les biens</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    // Coordonnées de référence — villes de Côte d'Ivoire
+    var CITY_COORDS = {
+        'Abidjan': [5.3600, -4.0083],
+        'Cocody': [5.3600, -3.9880],
+        'Yopougon': [5.3364, -4.0880],
+        'Plateau': [5.3230, -4.0210],
+        'Marcory': [5.2970, -3.9950],
+        'Riviera': [5.3400, -3.9600],
+        'Koumassi': [5.2880, -3.9550],
+        'Treichville': [5.3020, -4.0060],
+        'Abobo': [5.4200, -4.0200],
+        'Adjamé': [5.3530, -4.0230],
+        'Port-Bouët': [5.2560, -3.9240],
+        'Bouaké': [7.6906, -5.0303],
+        'Yamoussoukro': [6.8276, -5.2893],
+        'San-Pédro': [4.7485, -6.6363],
+        'San Pedro': [4.7485, -6.6363],
+        'Korhogo': [9.4580, -5.6296],
+        'Daloa': [6.8774, -6.4502],
+        'Man': [7.4125, -7.5538],
+        'Gagnoa': [6.1319, -5.9506],
+        'Grand-Bassam': [5.2118, -3.7388]
+    };
+
+    var mapMarkers = {{ map_markers_json|safe }};
+
+    // Limites strictes — Côte d'Ivoire uniquement
+    var CI_BOUNDS = L.latLngBounds(
+        L.latLng(4.15, -8.75),  // Sud-Ouest
+        L.latLng(10.85, -2.35)  // Nord-Est
+    );
+
+    function resolveCoords(city, lat, lng, address) {
+        if (lat != null && lng != null) return [parseFloat(lat), parseFloat(lng)];
+        var hay = ((address || '') + ' ' + (city || '')).toLowerCase();
+        var keys = Object.keys(CITY_COORDS);
+        for (var i = 0; i < keys.length; i++) {
+            if (hay.indexOf(keys[i].toLowerCase()) !== -1) return CITY_COORDS[keys[i]];
+        }
+        if (city && CITY_COORDS[city]) return CITY_COORDS[city];
+        return [5.36, -4.01];
+    }
+
+    // --- Carte Côte d'Ivoire uniquement ---
+    if (document.getElementById('ci-map') && typeof L !== 'undefined') {
+        var ciMap = L.map('ci-map', {
+            center: [7.54, -5.55],
+            zoom: 7,
+            minZoom: 7,
+            maxZoom: 19,
+            maxBounds: CI_BOUNDS,
+            maxBoundsViscosity: 1.0,
+            worldCopyJump: false
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(ciMap);
+
+        // Cadre initial = tout le pays (pas l'Afrique)
+        ciMap.fitBounds(CI_BOUNDS, { padding: [12, 12], maxZoom: 7 });
+
+        var bounds = [];
+        mapMarkers.forEach(function (m) {
+            var coords = resolveCoords(m.city, m.lat, m.lng, m.address);
+            // Sécurité : ignorer hors CI
+            if (!CI_BOUNDS.contains(coords)) return;
+            bounds.push(coords);
+
+            var placeLabel = m.address
+                ? (m.address + (m.city ? ', ' + m.city : ''))
+                : (m.city || '');
+
+            var marker = L.circleMarker(coords, {
+                radius: 10,
+                color: '#1B2A4A',
+                fillColor: '#D9A441',
+                fillOpacity: 0.95,
+                weight: 2
+            }).addTo(ciMap);
+
+            marker.bindPopup(
+                '<div class="lv-map-popup">' +
+                '<div class="title">' + m.title + '</div>' +
+                '<div class="price">' + m.price + ' FCFA / chambre</div>' +
+                '<div style="font-size:0.8rem;margin:6px 0;color:#666;">' +
+                '<i class="fas fa-map-marker-alt"></i> ' + placeLabel + ' · ' + m.rooms + ' pièces</div>' +
+                '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+                '<a href="' + m.tour_url + '" style="font-weight:700;background:#1B2A4A;color:#fff;padding:6px 10px;border-radius:6px;font-size:0.8rem;text-decoration:none;">Visite 3D</a>' +
+                '<a href="' + m.url + '" style="font-weight:700;color:#1B2A4A;font-size:0.85rem;padding:6px 4px;">Détails →</a>' +
+                '</div></div>',
+                { maxWidth: 280 }
+            );
+
+            // Zoom sur la maison au clic (vue rue / quartier)
+            marker.on('click', function () {
+                ciMap.flyTo(coords, Math.max(ciMap.getZoom(), 15), {
+                    animate: true,
+                    duration: 0.8
+                });
+            });
+        });
+
+        if (bounds.length > 1) {
+            ciMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
+        } else if (bounds.length === 1) {
+            ciMap.setView(bounds[0], 14);
+        }
+    }
+
+    // --- Carrousels photos ---
+    document.querySelectorAll('[data-carousel]').forEach(function (root) {
+        var track = root.querySelector('.lv-carousel__track');
+        var imgs = track ? Array.prototype.slice.call(track.querySelectorAll('img')) : [];
+        if (!imgs.length) return;
+        var index = 0;
+        var dotsWrap = root.querySelector('[data-carousel-dots]');
+        var prev = root.querySelector('[data-carousel-prev]');
+        var next = root.querySelector('[data-carousel-next]');
+        var timer = null;
+
+        function render() {
+            imgs.forEach(function (img, i) {
+                img.classList.toggle('is-active', i === index);
+            });
+            if (dotsWrap) {
+                dotsWrap.querySelectorAll('button').forEach(function (d, i) {
+                    d.classList.toggle('active', i === index);
+                });
+            }
+        }
+
+        if (dotsWrap && imgs.length > 1) {
+            dotsWrap.innerHTML = '';
+            imgs.forEach(function (_, dotIndex) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.setAttribute('aria-label', 'Photo ' + (dotIndex + 1));
+                if (dotIndex === 0) b.classList.add('active');
+                b.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    index = dotIndex;
+                    render();
+                    restart();
+                });
+                dotsWrap.appendChild(b);
+            });
+        }
+
+        function go(delta, e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            index = (index + delta + imgs.length) % imgs.length;
+            render();
+        }
+
+        function restart() {
+            if (timer) clearInterval(timer);
+            if (imgs.length > 1) {
+                timer = setInterval(function () { go(1); }, 4200 + Math.floor(Math.random() * 1200));
+            }
+        }
+
+        if (prev) prev.addEventListener('click', function (e) { go(-1, e); restart(); });
+        if (next) next.addEventListener('click', function (e) { go(1, e); restart(); });
+
+        root.addEventListener('mouseenter', function () {
+            if (timer) clearInterval(timer);
+        });
+        root.addEventListener('mouseleave', restart);
+
+        render();
+        restart();
+    });
+})();
+</script>
+{% endblock %}

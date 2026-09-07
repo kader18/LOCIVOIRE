@@ -1,0 +1,33 @@
+{
+  "appId": "ci.locivoire.app",
+  "appName": "Locivoire",
+  "webDir": "www",
+  "server": {
+    "url": "https://VOTRE-DOMAINE.ci",
+    "cleartext": false,
+    "androidScheme": "https",
+    "allowNavigation": [
+      "https://VOTRE-DOMAINE.ci",
+      "https://*.VOTRE-DOMAINE.ci"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2200,
+      "launchAutoHide": true,
+      "backgroundColor": "#101A30",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#101A30"
+    }
+  },
+  "android": {
+    "backgroundColor": "#101A30"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#101A30"
+  }
+}

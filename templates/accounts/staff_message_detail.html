@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ item.subject }} — Message{% endblock %}
+
+{% block extra_css %}
+<style>
+  .st { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+  .st-back { display:inline-block; margin-bottom:14px; font-weight:600; color:var(--navy); }
+  .st-card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; }
+  .st-card h1 { font-family:'Fraunces',serif; font-size:1.5rem; margin:0 0 8px; color:var(--navy); }
+  .st-meta { color:var(--muted); font-size:0.9rem; margin-bottom:16px; }
+  .st-body {
+    background:var(--paper); border-radius:12px; padding:16px; line-height:1.55; white-space:pre-wrap; margin-bottom:18px;
+  }
+  .st-card label { display:block; font-weight:600; margin-bottom:6px; color:var(--navy); }
+  .st-card textarea, .st-card select {
+    width:100%; border-radius:10px; border:1.5px solid var(--line); padding:10px 12px; margin-bottom:12px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="st">
+    <a class="st-back" href="{% url 'accounts:staff_messages' %}">← Messages</a>
+    <div class="st-card">
+        <h1>{{ item.subject }}</h1>
+        <p class="st-meta">
+            {{ item.name }} · <a href="mailto:{{ item.email }}">{{ item.email }}</a>
+            {% if item.phone %} · {{ item.phone }}{% endif %}
+            · {{ item.created_at|date:"d/m/Y à H:i" }}
+        </p>
+        <div class="st-body">{{ item.message }}</div>
+
+        <form method="post">
+            {% csrf_token %}
+            <label for="status">Statut</label>
+            <select name="status" id="status">
+                {% for value, label in item.STATUS_CHOICES %}
+                <option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <label for="admin_note">Note interne / réponse prévue</label>
+            <textarea name="admin_note" id="admin_note" rows="4" placeholder="Ex. : rappelé le… / réponse envoyée par email…">{{ item.admin_note }}</textarea>
+            <button type="submit" class="btn-gold">Enregistrer</button>
+            <a class="btn-outline" style="margin-left:8px;" href="mailto:{{ item.email }}?subject=Re:%20{{ item.subject|urlencode }}">Répondre par e-mail</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

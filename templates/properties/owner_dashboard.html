@@ -1,0 +1,540 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Espace prestataire — Locivoire{% endblock %}
+
+{% block extra_css %}
+<style>
+  .od {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+  .od-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 28px;
+    padding: 28px 28px 26px;
+    border-radius: 16px;
+    background:
+      linear-gradient(135deg, rgba(217,164,65,0.14) 0%, transparent 42%),
+      linear-gradient(160deg, #101A30 0%, #1B2A4A 55%, #243656 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .od-hero::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    bottom: -30px;
+    width: 220px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(217,164,65,0.25), transparent 70%);
+    pointer-events: none;
+  }
+  .od-hero__eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .od-hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    margin: 0 0 6px;
+  }
+  .od-hero p {
+    margin: 0;
+    opacity: 0.72;
+    font-size: 0.95rem;
+  }
+  .od-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    z-index: 1;
+  }
+  .od-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .od-stat {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .od-stat::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--gold);
+  }
+  .od-stat--avail::before { background: var(--teal); }
+  .od-stat--pending::before { background: #C47B2B; }
+  .od-stat--book::before { background: var(--navy); }
+  .od-stat__label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .od-stat__value {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .od-stat__hint {
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+  .od-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .od-section-head h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.35rem;
+    font-weight: 500;
+    margin: 0;
+    color: var(--ink);
+  }
+  .od-section-head span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .od-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-bottom: 40px;
+  }
+  .od-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    min-height: 148px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .od-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px -20px rgba(16, 26, 48, 0.35);
+  }
+  .od-card__media {
+    position: relative;
+    background: linear-gradient(160deg, var(--navy), #2C4066);
+    overflow: hidden;
+  }
+  .od-card__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .od-card__media-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.35);
+    font-size: 1.8rem;
+  }
+  .od-card__status {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(16,26,48,0.8);
+    color: #fff;
+  }
+  .od-card__status.is-available { background: var(--teal); }
+  .od-card__body {
+    padding: 14px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .od-card__title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin: 0 0 4px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .od-card__meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .od-card__meta i { color: var(--teal); margin-right: 4px; }
+  .od-card__price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    color: var(--gold-deep);
+    font-size: 0.92rem;
+    margin-bottom: auto;
+  }
+  .od-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .od-card__actions a {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 7px 10px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .od-btn-navy {
+    background: var(--navy);
+    color: #fff !important;
+  }
+  .od-btn-navy:hover { background: var(--navy-deep); color: #fff !important; }
+  .od-btn-gold {
+    background: var(--gold);
+    color: var(--navy-deep) !important;
+  }
+  .od-btn-line {
+    border: 1px solid var(--line);
+    color: var(--ink) !important;
+    background: transparent;
+  }
+  .od-btn-line:hover { border-color: var(--gold); color: var(--navy) !important; }
+  .od-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 24px;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.6);
+    color: var(--muted);
+  }
+  .od-bookings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .od-booking {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .od-booking__title {
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .od-booking__sub {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0;
+  }
+  .od-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 999px;
+  }
+  .od-badge--pending { background: rgba(196,123,43,0.15); color: #8A5418; }
+  .od-badge--approved { background: rgba(47,111,107,0.15); color: var(--teal); }
+  .od-badge--other { background: rgba(27,42,74,0.1); color: var(--navy); }
+
+  .od-edge {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .od-edge__card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    background: #fff;
+  }
+  .od-edge__card--gold {
+    background:
+      linear-gradient(135deg, rgba(217,164,65,0.12), transparent 50%),
+      #fff;
+    border-color: rgba(217,164,65,0.35);
+  }
+  .od-edge__card h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin: 0 0 8px;
+    color: var(--navy-deep);
+  }
+  .od-edge__card p {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .od-edge__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .od-edge__list li {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 0.88rem;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .od-edge__list li:last-child { margin-bottom: 0; }
+  .od-edge__list i { color: var(--gold-deep); margin-top: 3px; }
+  .od-edge__metric {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--navy-deep);
+    line-height: 1;
+    margin: 4px 0 6px;
+  }
+  .od-edge__metric span {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .od-immersive-pill {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 2;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(16,26,48,0.85);
+    color: var(--gold);
+  }
+  .od-immersive-pill.is-warn {
+    color: #f0c48a;
+    background: rgba(154, 90, 30, 0.9);
+  }
+
+  @media (max-width: 980px) {
+    .od-stats { grid-template-columns: repeat(2, 1fr); }
+    .od-grid { grid-template-columns: 1fr; }
+    .od-edge { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .od { padding: 20px 16px 48px; }
+    .od-stats { grid-template-columns: 1fr 1fr; }
+    .od-card { grid-template-columns: 110px 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="od">
+    <section class="od-hero">
+        <div>
+            <div class="od-hero__eyebrow">Espace prestataire</div>
+            <h1>Bonjour {{ user.first_name|default:user.username }}</h1>
+            <p>Gérez vos maisons, médias immersifs et demandes de location.</p>
+        </div>
+        <div class="od-hero__actions">
+            <a href="{% url 'properties:add_property' %}" class="btn-gold">
+                <i class="fas fa-plus"></i> Ajouter une maison
+            </a>
+            <a href="{% url 'properties:property_list' %}" class="btn-ghost" style="color:#fff;border:1px solid rgba(255,255,255,0.25);">
+                Voir le site
+            </a>
+        </div>
+    </section>
+
+    {% if not user.is_verified %}
+    <div style="margin-bottom:22px;padding:16px 18px;border-radius:12px;background:#fff5f3;border:1px solid rgba(196,92,74,0.3);color:#7a2e24;">
+        <strong>Compte en attente de validation</strong>
+        <p style="margin:6px 0 10px;font-size:0.92rem;">
+            L’admin Locivoire doit valider vos pièces d’identité avant que vous puissiez publier un bien.
+        </p>
+        <a href="{% url 'properties:property_list' %}#contact" class="btn-outline" style="border-color:#c45c4a;color:#7a2e24;">Contacter l’admin</a>
+    </div>
+    {% endif %}
+
+    <div class="od-stats">
+        <div class="od-stat">
+            <div class="od-stat__label">Maisons publiées</div>
+            <div class="od-stat__value">{{ total_properties }}</div>
+            <div class="od-stat__hint">portefeuille</div>
+        </div>
+        <div class="od-stat od-stat--avail">
+            <div class="od-stat__label">Disponibles</div>
+            <div class="od-stat__value">{{ available_properties }}</div>
+            <div class="od-stat__hint">à louer</div>
+        </div>
+        <div class="od-stat od-stat--pending">
+            <div class="od-stat__label">Demandes en attente</div>
+            <div class="od-stat__value">{{ pending_bookings }}</div>
+            <div class="od-stat__hint">à traiter</div>
+        </div>
+        <div class="od-stat od-stat--book">
+            <div class="od-stat__label">Réservations</div>
+            <div class="od-stat__value">{{ total_bookings }}</div>
+            <div class="od-stat__hint">au total</div>
+        </div>
+    </div>
+
+    <div class="od-edge">
+        <div class="od-edge__card od-edge__card--gold">
+            <h3>Votre avantage Locivoire</h3>
+            <p>Ce qui fait venir les locataires — et vous différencie d’une simple annonce Facebook ou d’un mois d’agence.</p>
+            <ul class="od-edge__list">
+                <li><i class="fas fa-cube" aria-hidden="true"></i><span>Visite immersive : moins de déplacements inutiles pour le locataire</span></li>
+                <li><i class="fas fa-user-check" aria-hidden="true"></i><span>Vous validez chaque demande — le client reste le vôtre</span></li>
+                <li><i class="fas fa-shield-alt" aria-hidden="true"></i><span>Compte vérifié : plus de confiance sur vos annonces</span></li>
+                <li><i class="fas fa-coins" aria-hidden="true"></i><span>Pas de commission « 1 mois de loyer » systématique</span></li>
+            </ul>
+        </div>
+        <div class="od-edge__card">
+            <h3>Visites immersives</h3>
+            <div class="od-edge__metric">{{ immersive_ready }} <span>/ {{ total_properties }}</span></div>
+            <p>
+                {% if props_needing_media %}
+                    {{ props_needing_media }} bien{{ props_needing_media|pluralize }} sans médias. Ajoutez photos / pièces pour activer la visite et attirer plus de demandes.
+                {% else %}
+                    Tous vos biens ont des médias. Pensez à enrichir chaque pièce pour maximiser la visite.
+                {% endif %}
+            </p>
+            {% if properties %}
+                <a class="btn-gold" href="{% url 'properties:manage_property_media' properties.0.pk %}">
+                    <i class="fas fa-images"></i> Enrichir les médias
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="od-section-head">
+        <h2>Mes maisons</h2>
+        <span>{{ total_properties }} bien{{ total_properties|pluralize }}</span>
+    </div>
+
+    <div class="od-grid">
+        {% for property in properties %}
+            {% with cover=property.images.all.0 %}
+            <article class="od-card">
+                <div class="od-card__media">
+                    {% if cover and cover.image %}
+                        <img src="{{ cover.image.url }}" alt="{{ property.title }}" loading="lazy">
+                    {% else %}
+                        <div class="od-card__media-fallback"><i class="fas fa-home"></i></div>
+                    {% endif %}
+                    <span class="od-card__status {% if property.status == 'available' %}is-available{% endif %}">
+                        {{ property.get_status_display }}
+                    </span>
+                    {% if property.media_count %}
+                        <span class="od-immersive-pill"><i class="fas fa-cube"></i> Visite prête</span>
+                    {% else %}
+                        <span class="od-immersive-pill is-warn"><i class="fas fa-images"></i> Médias manquants</span>
+                    {% endif %}
+                </div>
+                <div class="od-card__body">
+                    <h3 class="od-card__title" title="{{ property.title }}">{{ property.title }}</h3>
+                    <div class="od-card__meta">
+                        <i class="fas fa-map-marker-alt"></i>{{ property.city }}
+                        · {{ property.get_property_type_display }}
+                        · {{ property.rooms.count }} pièce{{ property.rooms.count|pluralize }}
+                    </div>
+                    <div class="od-card__price">{{ property.price_per_room|floatformat:0 }} FCFA / chambre</div>
+                    <div class="od-card__actions">
+                        <a class="od-btn-navy" href="{% url 'bookings:ar_demo' property.pk %}">
+                            <i class="fas fa-cube"></i> Visite
+                        </a>
+                        <a class="od-btn-gold" href="{% url 'properties:manage_property_media' property.pk %}">
+                            <i class="fas fa-images"></i> Médias
+                        </a>
+                        <a class="od-btn-line" href="{% url 'properties:property_detail' property.pk %}">
+                            <i class="fas fa-eye"></i> Voir
+                        </a>
+                    </div>
+                </div>
+            </article>
+            {% endwith %}
+        {% empty %}
+            <div class="od-empty">
+                <p class="mb-3">Aucune maison pour le moment.</p>
+                <a href="{% url 'properties:add_property' %}" class="btn-gold">
+                    <i class="fas fa-plus"></i> Publier ma première maison
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="od-section-head">
+        <h2>Réservations récentes</h2>
+        <span>10 dernières</span>
+    </div>
+
+    <div class="od-bookings">
+        {% for booking in bookings %}
+            <div class="od-booking">
+                <div>
+                    <p class="od-booking__title">{{ booking.property_obj.title }}</p>
+                    <p class="od-booking__sub">
+                        {{ booking.tenant.username }}
+                        · {{ booking.start_date|date:"d/m/Y" }} → {{ booking.end_date|date:"d/m/Y" }}
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="od-badge {% if booking.status == 'approved' %}od-badge--approved{% elif booking.status == 'pending' %}od-badge--pending{% else %}od-badge--other{% endif %}">
+                        {{ booking.get_status_display }}
+                    </span>
+                    <a href="{% url 'bookings:booking_detail' booking.pk %}" class="od-btn-line" style="padding:7px 12px;font-size:0.75rem;font-weight:600;border-radius:7px;">
+                        Détails
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="od-empty" style="padding:28px;">
+                Aucune réservation pour le moment.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

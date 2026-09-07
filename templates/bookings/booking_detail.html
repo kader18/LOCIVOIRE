@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Réservation — {{ booking.property_obj.title }} — Locivoire{% endblock %}
+
+{% block extra_css %}
+<style>
+  .bd {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+  .bd-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 18px;
+  }
+  .bd-back:hover { color: var(--navy); }
+  .bd-back i { color: var(--gold-deep); }
+
+  .bd-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .bd-main {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .bd-hero {
+    position: relative;
+    height: 220px;
+    background: linear-gradient(160deg, var(--navy-deep), #2C4066);
+  }
+  .bd-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .bd-hero__fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.35);
+    font-size: 3rem;
+  }
+  .bd-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 2;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 6px 11px;
+    border-radius: 999px;
+    color: #fff;
+  }
+  .bd-badge--approved { background: var(--teal); }
+  .bd-badge--pending { background: #C47B2B; }
+  .bd-badge--rejected,
+  .bd-badge--cancelled { background: #9B3B3B; }
+  .bd-badge--completed { background: var(--navy); }
+
+  .bd-body { padding: 24px 26px 28px; }
+
+  .bd-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 0 0 6px;
+  }
+  .bd-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    color: var(--navy-deep);
+    margin: 0 0 8px;
+    line-height: 1.2;
+  }
+  .bd-loc {
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .bd-loc i { color: var(--gold-deep); margin-right: 6px; }
+
+  .bd-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .bd-tile {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: rgba(27, 42, 74, 0.02);
+  }
+  .bd-tile__label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+  .bd-tile__value {
+    margin: 0;
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+
+  .bd-section {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .bd-section h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.05rem;
+    color: var(--navy-deep);
+    margin: 0 0 10px;
+  }
+  .bd-message {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(217, 164, 65, 0.08);
+    border: 1px solid rgba(217, 164, 65, 0.22);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .bd-message--owner {
+    background: rgba(27, 42, 74, 0.04);
+    border-color: var(--line);
+  }
+  .bd-meta-foot {
+    margin: 22px 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .bd-side {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .bd-price-card {
+    background: linear-gradient(165deg, #101A30 0%, #1B2A4A 70%, #243656 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .bd-price-card__label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin: 0 0 6px;
+  }
+  .bd-price-card__value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 1.55rem;
+    color: var(--gold);
+    margin: 0 0 4px;
+  }
+  .bd-price-card__hint {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.6;
+  }
+
+  .bd-actions {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .bd-actions h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.15rem;
+    color: var(--navy-deep);
+    margin: 0 0 14px;
+  }
+  .bd-actions form + form,
+  .bd-actions form + button,
+  .bd-actions form + a,
+  .bd-actions button + a,
+  .bd-actions a + a {
+    margin-top: 10px;
+    display: block;
+  }
+  .bd-btn-approve {
+    width: 100%;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    background: var(--teal);
+    color: #fff !important;
+    font-weight: 600;
+  }
+  .bd-btn-approve:hover { filter: brightness(1.05); color: #fff !important; }
+  .bd-btn-reject {
+    width: 100%;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    background: #9B3B3B;
+    color: #fff !important;
+    font-weight: 600;
+  }
+  .bd-btn-reject:hover { filter: brightness(1.05); color: #fff !important; }
+  .bd-actions .btn-outline,
+  .bd-actions .btn-gold,
+  .bd-actions .btn-solid {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bd-modal .modal-content {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .bd-modal .modal-header {
+    background: var(--navy-deep);
+    color: #fff;
+    border: none;
+  }
+  .bd-modal .modal-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+  }
+  .bd-modal .btn-close { filter: invert(1); }
+
+  @media (max-width: 900px) {
+    .bd-layout { grid-template-columns: 1fr; }
+    .bd-side { position: static; }
+    .bd-grid { grid-template-columns: 1fr; }
+    .bd-hero { height: 180px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% with prop=booking.property_obj %}
+<div class="bd">
+    <a class="bd-back" href="{% url 'bookings:booking_list' %}">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        Retour aux réservations
+    </a>
+
+    <div class="bd-layout">
+        <article class="bd-main">
+            <div class="bd-hero">
+                {% with cover=prop.images.all.0 %}
+                    {% if cover %}
+                        <img src="{{ cover.image.url }}" alt="{{ prop.title }}" loading="lazy">
+                    {% else %}
+                        <span class="bd-hero__fallback" aria-hidden="true"><i class="fas fa-home"></i></span>
+                    {% endif %}
+                {% endwith %}
+                <span class="bd-badge bd-badge--{{ booking.status }}">{{ booking.get_status_display }}</span>
+            </div>
+
+            <div class="bd-body">
+                <p class="bd-eyebrow">{{ prop.get_property_type_display }} · Réservation</p>
+                <h1 class="bd-title">{{ prop.title }}</h1>
+                <p class="bd-loc">
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                    {{ prop.address }}, {{ prop.city }}
+                </p>
+
+                <div class="bd-grid">
+                    <div class="bd-tile">
+                        <p class="bd-tile__label">Début</p>
+                        <p class="bd-tile__value">{{ booking.start_date|date:"j F Y" }}</p>
+                    </div>
+                    <div class="bd-tile">
+                        <p class="bd-tile__label">Fin</p>
+                        <p class="bd-tile__value">{{ booking.end_date|date:"j F Y" }}</p>
+                    </div>
+                    <div class="bd-tile">
+                        <p class="bd-tile__label">Durée</p>
+                        <p class="bd-tile__value">{{ booking.duration_days }} jour{{ booking.duration_days|pluralize }}</p>
+                    </div>
+                    <div class="bd-tile">
+                        <p class="bd-tile__label">Chambres</p>
+                        <p class="bd-tile__value">{{ booking.number_of_rooms }}</p>
+                    </div>
+                </div>
+
+                {% if user.is_owner and prop.owner == user %}
+                <div class="bd-section">
+                    <h3>Locataire</h3>
+                    <div class="bd-grid">
+                        <div class="bd-tile">
+                            <p class="bd-tile__label">Nom</p>
+                            <p class="bd-tile__value">{{ booking.tenant.get_full_name|default:booking.tenant.username }}</p>
+                        </div>
+                        <div class="bd-tile">
+                            <p class="bd-tile__label">Email</p>
+                            <p class="bd-tile__value">{{ booking.tenant.email|default:"—" }}</p>
+                        </div>
+                        <div class="bd-tile">
+                            <p class="bd-tile__label">Téléphone</p>
+                            <p class="bd-tile__value">{{ booking.tenant.phone|default:"Non renseigné" }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if booking.message %}
+                <div class="bd-section">
+                    <h3>Message du locataire</h3>
+                    <p class="bd-message">{{ booking.message }}</p>
+                </div>
+                {% endif %}
+
+                {% if booking.owner_response %}
+                <div class="bd-section">
+                    <h3>Réponse du propriétaire</h3>
+                    <p class="bd-message bd-message--owner">{{ booking.owner_response }}</p>
+                </div>
+                {% endif %}
+
+                <p class="bd-meta-foot">
+                    Demande créée le {{ booking.created_at|date:"d/m/Y à H:i" }}
+                </p>
+            </div>
+        </article>
+
+        <aside class="bd-side">
+            <div class="bd-price-card">
+                <p class="bd-price-card__label">Prix total</p>
+                <p class="bd-price-card__value">{{ booking.total_price|floatformat:0 }} FCFA</p>
+                <p class="bd-price-card__hint">
+                    {{ booking.duration_days }} nuit{{ booking.duration_days|pluralize }}
+                    · {{ booking.number_of_rooms }} chambre{{ booking.number_of_rooms|pluralize }}
+                </p>
+            </div>
+
+            <div class="bd-actions">
+                <h2>Actions</h2>
+
+                {% if user.is_owner and prop.owner == user and booking.status == 'pending' %}
+                    <form method="post" action="{% url 'bookings:approve_booking' booking.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="bd-btn-approve">
+                            <i class="fas fa-check me-1" aria-hidden="true"></i> Approuver
+                        </button>
+                    </form>
+                    <button type="button" class="bd-btn-reject" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="fas fa-times me-1" aria-hidden="true"></i> Rejeter
+                    </button>
+                {% endif %}
+
+                <a href="{% url 'properties:property_detail' prop.pk %}" class="btn-gold">
+                    <i class="fas fa-home me-1" aria-hidden="true"></i> Voir le bien
+                </a>
+                <a href="{% url 'bookings:booking_list' %}" class="btn-outline">
+                    <i class="fas fa-list me-1" aria-hidden="true"></i> Toutes les réservations
+                </a>
+            </div>
+        </aside>
+    </div>
+</div>
+
+{% if user.is_owner and prop.owner == user and booking.status == 'pending' %}
+<div class="modal fade bd-modal" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel">Rejeter la réservation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form method="post" action="{% url 'bookings:reject_booking' booking.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <label class="form-label" for="owner_response">Raison (optionnel)</label>
+                    <textarea id="owner_response" name="owner_response" class="form-control" rows="3"
+                              placeholder="Expliquez brièvement le motif…"></textarea>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn-outline" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="bd-btn-reject" style="width:auto;">Confirmer le rejet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endwith %}
+{% endblock %}
