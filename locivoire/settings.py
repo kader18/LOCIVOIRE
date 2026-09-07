@@ -4,11 +4,37 @@ Django settings for locivoire project.
 
 import os
 from pathlib import Path
-
-import dj_database_url
+from urllib.parse import urlparse, unquote
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _database_from_url(url: str) -> dict:
+    """Parse DATABASE_URL (Postgres / sqlite) sans dépendance externe."""
+    parsed = urlparse(url)
+    scheme = (parsed.scheme or '').lower()
+    if scheme in ('postgres', 'postgresql'):
+        return {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote((parsed.path or '/')[1:]),
+            'USER': unquote(parsed.username or ''),
+            'PASSWORD': unquote(parsed.password or ''),
+            'HOST': parsed.hostname or '',
+            'PORT': str(parsed.port or 5432),
+            'CONN_MAX_AGE': 600,
+            'CONN_HEALTH_CHECKS': True,
+            'OPTIONS': {},
+        }
+    if scheme == 'sqlite':
+        name = unquote((parsed.path or '').lstrip('/'))
+        if not name:
+            name = str(BASE_DIR / 'db.sqlite3')
+        return {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': name,
+        }
+    raise ValueError(f'Unsupported DATABASE_URL scheme: {scheme}')
 
 
 # Quick-start development settings - unsuitable for production
@@ -104,13 +130,16 @@ WSGI_APPLICATION = 'locivoire.wsgi.application'
 # Sur Render : lier la base Postgres au service Web → DATABASE_URL est injecté.
 # En local sans DATABASE_URL → SQLite.
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+_database_url = os.environ.get('DATABASE_URL', '').strip()
+if _database_url:
+    DATABASES = {'default': _database_from_url(_database_url)}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
