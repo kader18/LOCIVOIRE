@@ -6,13 +6,14 @@
 {% block extra_css %}
 <style>
   .pd {
-    max-width: 1180px;
+    max-width: 1480px;
     margin: 0 auto;
-    padding: 28px 20px 64px;
+    padding: 24px 28px 56px;
+    width: 100%;
   }
   .pd-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 420px);
     gap: 28px;
     align-items: start;
   }
@@ -314,7 +315,7 @@
     border: none;
     border-top: 1px solid var(--line);
   }
-  #property-map { height: 200px; width: 100%; }
+  #property-map { height: 380px; width: 100%; }
   .pd-map-caption {
     margin: 0;
     padding: 8px 12px 4px;
@@ -353,24 +354,43 @@
     cursor: wait;
   }
   .pd-map-route-btn i { color: var(--gold-deep); }
-  .pd-map-distance {
+  .pd-map-status {
     margin: 0;
-    font-size: 0.8rem;
-    line-height: 1.4;
-    color: var(--muted);
-    min-height: 1.2em;
-  }
-  .pd-map-distance.is-ok {
-    color: var(--navy-deep);
-    font-weight: 600;
-  }
-  .pd-map-distance.is-err {
+    font-size: 0.78rem;
+    line-height: 1.35;
     color: #a33a2c;
     font-weight: 600;
+    min-height: 0;
   }
-  .pd-map-distance strong {
-    color: var(--gold-deep);
+  .pd-map-status:empty { display: none; }
+  .leaflet-tooltip.pd-route-tip {
+    background: #101A30;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 10px 24px rgba(16, 26, 48, 0.35);
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+  .leaflet-tooltip.pd-route-tip::before {
+    border-top-color: #101A30;
+  }
+  .pd-route-tip strong {
+    color: var(--gold);
     font-family: 'IBM Plex Mono', monospace;
+  }
+  .pd-route-tip__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    white-space: nowrap;
+  }
+  .pd-route-tip__row + .pd-route-tip__row {
+    margin-top: 4px;
+  }
+  .pd-route-tip__label {
+    opacity: 0.72;
   }
 
   /* Sidebar prix */
@@ -421,7 +441,15 @@
     margin-bottom: 14px;
   }
 
+  @media (max-width: 1100px) {
+    .pd-layout {
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+    }
+  }
   @media (max-width: 980px) {
+    .pd {
+      padding: 18px 16px 48px;
+    }
     .pd-layout {
       grid-template-columns: 1fr;
     }
@@ -430,7 +458,7 @@
       order: -1;
     }
     .pd-side-map { margin-bottom: 12px; }
-    #property-map { height: 180px; }
+    #property-map { height: 300px; }
     .pd-rooms { grid-template-columns: 1fr; }
   }
 </style>
@@ -548,27 +576,35 @@
                         <i class="fas fa-route" aria-hidden="true"></i>
                         Distance depuis ma position
                     </button>
-                    <p class="pd-map-distance" id="pd-map-distance" aria-live="polite"></p>
+                    <p class="pd-map-status" id="pd-map-status" aria-live="polite"></p>
                 </div>
             </div>
 
             <div class="pd-book">
-                <div class="pd-book__label">Prix / chambre</div>
+                <div class="pd-book__label">{{ property.price_headline }}</div>
                 <div class="pd-book__price">{{ property.price_per_room|floatformat:0 }} FCFA</div>
-                <div class="pd-book__unit">par nuit · Côte d'Ivoire</div>
+                <div class="pd-book__unit">{{ property.price_unit_label }} · Côte d'Ivoire</div>
 
                 {% if user.is_authenticated %}
                     {% if user.is_tenant %}
                         <form method="post" action="{% url 'bookings:create_booking' property.pk %}" class="text-start">
                             {% csrf_token %}
                             <div class="mb-2">
-                                <label class="form-label text-white-50 small mb-1">Début</label>
+                                <label class="form-label text-white-50 small mb-1">
+                                    {% if property.is_monthly %}Date d’entrée{% else %}Début{% endif %}
+                                </label>
                                 <input type="date" name="start_date" class="form-control" required>
                             </div>
                             <div class="mb-2">
-                                <label class="form-label text-white-50 small mb-1">Fin</label>
+                                <label class="form-label text-white-50 small mb-1">
+                                    {% if property.is_monthly %}Fin de période{% else %}Fin{% endif %}
+                                </label>
                                 <input type="date" name="end_date" class="form-control" required>
                             </div>
+                            {% if property.is_entire_rental %}
+                                <input type="hidden" name="number_of_rooms" value="1">
+                                <p class="pd-book__note mb-2">Location du logement complet (résidence).</p>
+                            {% else %}
                             <div class="mb-2">
                                 <label class="form-label text-white-50 small mb-1">Chambres</label>
                                 <select name="number_of_rooms" class="form-select" required>
@@ -577,12 +613,14 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                            {% endif %}
                             <div class="mb-3">
                                 <label class="form-label text-white-50 small mb-1">Message</label>
-                                <textarea name="message" class="form-control" rows="2"></textarea>
+                                <textarea name="message" class="form-control" rows="2" placeholder="{% if property.is_monthly %}Présentez-vous brièvement…{% else %}{% endif %}"></textarea>
                             </div>
                             <button type="submit" class="btn-gold w-100 justify-content-center mb-2">
-                                <i class="fas fa-calendar-check"></i> Réserver
+                                <i class="fas fa-calendar-check"></i>
+                                {% if property.is_monthly %}Demander la location{% else %}Réserver{% endif %}
                             </button>
                             <a href="{% url 'bookings:toggle_favorite' property.pk %}" class="btn btn-outline-light btn-sm w-100 mb-2">
                                 {% if is_favorite %}<i class="fas fa-heart"></i> Retirer des favoris{% else %}<i class="far fa-heart"></i> Favoris{% endif %}
@@ -765,15 +803,17 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
     var routeBtn = document.getElementById('pd-route-btn');
-    var distEl = document.getElementById('pd-map-distance');
+    var statusEl = document.getElementById('pd-map-status');
     var userMarker = null;
     var routeLayer = null;
+    var routeHit = null;
 
-    function setDistance(text, kind) {
-        if (!distEl) return;
-        distEl.innerHTML = text || '';
-        distEl.classList.remove('is-ok', 'is-err');
-        if (kind) distEl.classList.add(kind);
+    // Vitesses réalistes (fallback si le serveur piéton échoue)
+    var WALK_KMH = 4.5;
+    var DRIVE_KMH = 70;
+
+    function setStatus(text) {
+        if (statusEl) statusEl.textContent = text || '';
     }
 
     function haversineKm(a, b) {
@@ -790,82 +830,171 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function formatKm(km) {
         if (km < 1) return Math.round(km * 1000) + ' m';
-        return (Math.round(km * 10) / 10).toLocaleString('fr-FR') + ' km';
+        if (km < 10) return (Math.round(km * 10) / 10).toLocaleString('fr-FR') + ' km';
+        return Math.round(km).toLocaleString('fr-FR') + ' km';
+    }
+
+    function formatDuration(sec) {
+        if (sec == null || isNaN(sec) || sec < 0) return '—';
+        var totalMin = Math.max(1, Math.round(sec / 60));
+        if (totalMin < 60) return totalMin + ' min';
+        var days = Math.floor(totalMin / (60 * 24));
+        var hours = Math.floor((totalMin % (60 * 24)) / 60);
+        var mins = totalMin % 60;
+        if (days > 0) {
+            return days + ' j' + (hours ? ' ' + hours + ' h' : '');
+        }
+        return hours + ' h' + (mins ? ' ' + mins + ' min' : '');
+    }
+
+    function tipHtml(km, walkSec, driveSec) {
+        return '' +
+            '<div class="pd-route-tip__row"><span class="pd-route-tip__label">Distance</span><strong>' + formatKm(km) + '</strong></div>' +
+            '<div class="pd-route-tip__row"><span class="pd-route-tip__label">Voiture</span><strong>' + formatDuration(driveSec) + '</strong></div>' +
+            '<div class="pd-route-tip__row"><span class="pd-route-tip__label">À pied</span><strong>' + formatDuration(walkSec) + '</strong></div>' +
+            '<div style="margin-top:6px;opacity:0.55;font-size:0.72rem;">Estimation sans trafic</div>';
     }
 
     function clearRoute() {
         if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+        if (routeHit) { map.removeLayer(routeHit); routeHit = null; }
         if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
     }
 
-    function drawRoute(userCoords, roadLatLngs, roadKm) {
-        clearRoute();
-        userMarker = L.circleMarker(userCoords, {
-            radius: 9, color: '#fff', fillColor: '#2F6FED', fillOpacity: 1, weight: 2
-        }).addTo(map).bindPopup('Vous êtes ici');
-
-        var linePts = roadLatLngs && roadLatLngs.length > 1 ? roadLatLngs : [userCoords, coords];
-        routeLayer = L.polyline(linePts, {
-            color: '#D9A441',
-            weight: 4,
-            opacity: 0.92,
-            dashArray: roadLatLngs ? null : '8 8'
-        }).addTo(map);
-
-        var bird = haversineKm(userCoords, coords);
-        var label = roadKm != null
-            ? 'À environ <strong>' + formatKm(roadKm) + '</strong> en voiture · ' + formatKm(bird) + ' à vol d’oiseau'
-            : 'À environ <strong>' + formatKm(bird) + '</strong> à vol d’oiseau';
-        setDistance(label, 'is-ok');
-        map.fitBounds(L.latLngBounds([userCoords, coords]).pad(0.25), { maxZoom: 15 });
-        houseMarker.openPopup();
+    function estimateSec(km, speedKmh) {
+        return (km / speedKmh) * 3600;
     }
 
-    function fetchRoadRoute(userCoords) {
-        var url = 'https://router.project-osrm.org/route/v1/driving/' +
+    /** Serveurs OSM distincts voiture / piéton (comme Google : 2 modes différents). */
+    function fetchRoute(mode, userCoords, withGeometry) {
+        var base = mode === 'foot'
+            ? 'https://routing.openstreetmap.de/routed-foot/route/v1/driving/'
+            : 'https://routing.openstreetmap.de/routed-car/route/v1/driving/';
+        var overview = withGeometry ? 'full' : 'false';
+        var url = base +
             userCoords[1] + ',' + userCoords[0] + ';' +
             coords[1] + ',' + coords[0] +
-            '?overview=full&geometries=geojson';
-        return fetch(url).then(function (r) { return r.json(); }).then(function (data) {
+            '?overview=' + overview + '&geometries=geojson';
+
+        return fetch(url).then(function (r) {
+            if (!r.ok) throw new Error('http ' + r.status);
+            return r.json();
+        }).then(function (data) {
             if (!data || data.code !== 'Ok' || !data.routes || !data.routes[0]) {
                 throw new Error('no route');
             }
             var route = data.routes[0];
-            var latlngs = route.geometry.coordinates.map(function (c) {
-                return [c[1], c[0]];
-            });
-            return { latlngs: latlngs, km: route.distance / 1000 };
+            var latlngs = null;
+            if (withGeometry && route.geometry && route.geometry.coordinates) {
+                latlngs = route.geometry.coordinates.map(function (c) {
+                    return [c[1], c[0]];
+                });
+            }
+            return {
+                latlngs: latlngs,
+                km: route.distance / 1000,
+                duration: route.duration
+            };
         });
+    }
+
+    function resolveTimes(km, drive, foot) {
+        var driveSec = drive && drive.duration != null
+            ? drive.duration
+            : estimateSec(km, DRIVE_KMH);
+
+        // Temps à pied : serveur piéton, sinon distance route ÷ 4,5 km/h
+        var walkSec = foot && foot.duration != null
+            ? foot.duration
+            : estimateSec(km, WALK_KMH);
+
+        // Si le serveur renvoie un temps piéton quasi identique à la voiture → recalcul
+        if (driveSec > 0 && Math.abs(walkSec - driveSec) / driveSec < 0.2) {
+            walkSec = estimateSec(km, WALK_KMH);
+        }
+
+        // Garde-fous réalistes
+        if (walkSec < driveSec * 1.5) {
+            walkSec = estimateSec(km, WALK_KMH);
+        }
+        return { driveSec: driveSec, walkSec: walkSec };
+    }
+
+    function drawRoute(userCoords, routeInfo) {
+        clearRoute();
+        setStatus('');
+        userMarker = L.circleMarker(userCoords, {
+            radius: 9, color: '#fff', fillColor: '#2F6FED', fillOpacity: 1, weight: 2
+        }).addTo(map).bindPopup('Vous êtes ici');
+
+        var linePts = (routeInfo.latlngs && routeInfo.latlngs.length > 1)
+            ? routeInfo.latlngs
+            : [userCoords, coords];
+        var km = routeInfo.km != null ? routeInfo.km : haversineKm(userCoords, coords);
+        var times = resolveTimes(km, { duration: routeInfo.driveSec }, { duration: routeInfo.walkSec });
+
+        routeLayer = L.polyline(linePts, {
+            color: '#D9A441',
+            weight: 5,
+            opacity: 0.95,
+            dashArray: routeInfo.latlngs ? null : '8 8',
+            interactive: false
+        }).addTo(map);
+
+        routeHit = L.polyline(linePts, {
+            color: '#D9A441',
+            weight: 18,
+            opacity: 0,
+            interactive: true
+        }).addTo(map);
+
+        routeHit.bindTooltip(tipHtml(km, times.walkSec, times.driveSec), {
+            sticky: true,
+            direction: 'top',
+            opacity: 1,
+            className: 'pd-route-tip'
+        });
+
+        map.fitBounds(L.latLngBounds(linePts).pad(0.2), { maxZoom: 15 });
     }
 
     if (routeBtn) {
         routeBtn.addEventListener('click', function () {
             if (!navigator.geolocation) {
-                setDistance('GPS non disponible sur cet appareil.', 'is-err');
+                setStatus('GPS non disponible sur cet appareil.');
                 return;
             }
             routeBtn.disabled = true;
-            setDistance('Localisation en cours…', '');
+            setStatus('');
             navigator.geolocation.getCurrentPosition(
                 function (pos) {
                     var userCoords = [pos.coords.latitude, pos.coords.longitude];
-                    fetchRoadRoute(userCoords)
-                        .then(function (road) {
-                            drawRoute(userCoords, road.latlngs, road.km);
-                        })
-                        .catch(function () {
-                            drawRoute(userCoords, null, null);
-                        })
-                        .finally(function () {
-                            routeBtn.disabled = false;
+                    // Voiture = tracé + durée ; à pied = durée séparée (profil piéton)
+                    Promise.all([
+                        fetchRoute('car', userCoords, true).catch(function () { return null; }),
+                        fetchRoute('foot', userCoords, false).catch(function () { return null; })
+                    ]).then(function (results) {
+                        var driving = results[0];
+                        var walking = results[1];
+                        var bird = haversineKm(userCoords, coords);
+                        var km = (driving && driving.km) || (walking && walking.km) || bird;
+                        var times = resolveTimes(km, driving, walking);
+                        drawRoute(userCoords, {
+                            latlngs: (driving && driving.latlngs) || null,
+                            km: km,
+                            driveSec: times.driveSec,
+                            walkSec: times.walkSec
                         });
+                    }).finally(function () {
+                        routeBtn.disabled = false;
+                    });
                 },
                 function (err) {
                     routeBtn.disabled = false;
                     var msg = 'Impossible d’obtenir votre position.';
                     if (err && err.code === 1) msg = 'Autorisez l’accès à la localisation, puis réessayez.';
                     if (err && err.code === 3) msg = 'Délai dépassé — réessayez près d’une fenêtre.';
-                    setDistance(msg, 'is-err');
+                    setStatus(msg);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );

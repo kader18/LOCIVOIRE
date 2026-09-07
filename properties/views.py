@@ -127,11 +127,14 @@ def property_list(request):
             'city': p.city,
             'address': p.address or '',
             'price': f'{p.price_per_room:,.0f}'.replace(',', ' '),
+            'price_unit': p.price_unit_label,
             'lat': float(p.latitude) if p.latitude is not None else None,
             'lng': float(p.longitude) if p.longitude is not None else None,
             'url': reverse('properties:property_detail', args=[p.pk]),
             'tour_url': reverse('bookings:ar_demo', args=[p.pk]),
             'rooms': p.number_of_rooms,
+            'property_type': p.property_type,
+            'type_label': p.get_property_type_display(),
         })
 
     context = {
@@ -300,6 +303,8 @@ def add_property(request):
             title=request.POST.get('title'),
             description=request.POST.get('description'),
             property_type=request.POST.get('property_type'),
+            rental_mode=request.POST.get('rental_mode') or 'entire',
+            price_period=request.POST.get('price_period') or 'month',
             address=request.POST.get('address'),
             city=request.POST.get('city'),
             country=request.POST.get('country', "Côte d'Ivoire"),

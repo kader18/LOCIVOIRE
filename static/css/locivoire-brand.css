@@ -779,7 +779,7 @@ a { text-decoration: none; color: inherit; }
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #1a2744;
+  background: #dfe5ee;
 }
 
 .lv-map-canvas--tall {
@@ -790,6 +790,19 @@ a { text-decoration: none; color: inherit; }
 .lv-map-canvas #property-map {
   width: 100%;
   height: 100%;
+  min-height: inherit;
+}
+
+#ci-map {
+  height: 560px !important;
+  width: 100% !important;
+  background: #dfe5ee;
+}
+@media (max-width: 768px) {
+  .lv-map-canvas--tall,
+  #ci-map {
+    height: 380px !important;
+  }
 }
 
 .lv-africa-banner {
@@ -1176,8 +1189,82 @@ main.lv-main {
 
 /* Leaflet tweaks */
 .leaflet-container { font-family: 'Work Sans', sans-serif; }
+.lv-map-popup .type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin-bottom: 2px;
+}
 .lv-map-popup .title { font-weight: 700; margin-bottom: 4px; }
 .lv-map-popup .price { color: var(--gold-deep); font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; }
+
+.lv-map-legend {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  color: #B9C1D1;
+  font-size: 0.82rem;
+}
+.lv-map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.lv-map-legend .lv-map-pin {
+  width: 28px;
+  height: 28px;
+  font-size: 0.78rem;
+}
+
+.lv-map-marker {
+  background: transparent !important;
+  border: none !important;
+}
+.lv-map-pin {
+  width: 40px;
+  height: 40px;
+  border-radius: 50% 50% 50% 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(16, 26, 48, 0.4);
+  border: 2.5px solid #fff;
+  transform: rotate(-45deg);
+  font-size: 1rem;
+  line-height: 1;
+}
+.lv-map-pin i,
+.lv-map-pin svg {
+  transform: rotate(45deg);
+  display: block;
+}
+.lv-map-pin svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.lv-map-pin--villa { background: #D9A441; color: #101A30; }
+.lv-map-pin--house { background: #1B2A4A; color: #fff; }
+.lv-map-pin--residence { background: #3d6aa8; color: #fff; }
+.lv-map-pin--apartment { background: #5a7a9a; color: #fff; }
+.lv-map-pin--studio { background: #c47a3a; color: #fff; }
+.lv-map-pin--land { background: #3d8f6a; color: #fff; }
+
+.lv-map-legend .lv-map-pin {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+.lv-map-legend .lv-map-pin svg {
+  width: 13px;
+  height: 13px;
+}
 
 /* Demo banner */
 .lv-demo-banner {

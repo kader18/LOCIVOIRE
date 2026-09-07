@@ -5,6 +5,28 @@
 
 {% block body_attrs %}data-lv-splash="home"{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Icônes carte — styles inline pour éviter le cache CSS */
+  .lv-map-marker { background: transparent !important; border: none !important; }
+  .lv-map-pin {
+    width: 40px; height: 40px;
+    border-radius: 50% 50% 50% 4px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 16px rgba(16, 26, 48, 0.45);
+    border: 2.5px solid #fff;
+    transform: rotate(-45deg);
+  }
+  .lv-map-pin svg { transform: rotate(45deg); width: 18px; height: 18px; fill: currentColor; display: block; }
+  .lv-map-pin--villa { background: #D9A441; color: #101A30; }
+  .lv-map-pin--house { background: #1B2A4A; color: #fff; }
+  .lv-map-pin--residence { background: #3d6aa8; color: #fff; }
+  .lv-map-pin--apartment { background: #5a7a9a; color: #fff; }
+  .lv-map-pin--studio { background: #c47a3a; color: #fff; }
+  .lv-map-pin--land { background: #3d8f6a; color: #fff; }
+</style>
+{% endblock %}
+
 {% block footer_modifier %} lv-footer--contact{% endblock %}
 {% block footer_attrs %}id="contact"{% endblock %}
 
@@ -67,7 +89,7 @@
     <div class="lv-hero-inner">
         <span class="lv-eyebrow">Abidjan · Bouaké · Yamoussoukro · San-Pédro</span>
         <h1>Trouvez votre <em>maison idéale</em>,<br>quartier par quartier.</h1>
-        <p>Des logements vérifiés en Côte d'Ivoire, avec photos réelles et visites virtuelles immersives — sans casque VR.</p>
+        <p>Maisons, appartements et résidences à louer en Côte d'Ivoire — visite immersive, sans casque VR.</p>
     </div>
 
     <div class="lv-search-card" id="lv-search">
@@ -111,8 +133,7 @@
         </div>
         <div class="lv-section-underline"></div>
         <p style="color:#9AA3B5;font-size:0.9rem;margin:-16px 0 20px;">
-            Zoomez pour voir l'emplacement exact de chaque maison dans sa ville.
-            Cliquez un point or pour afficher les infos.
+            Zoomez pour voir l’emplacement exact de chaque bien.
         </p>
     </div>
 
@@ -156,7 +177,7 @@
                             </svg>
                         {% endif %}
                         {% endwith %}
-                        <span class="lv-prop-price mono">{{ property.price_per_room|floatformat:0 }} FCFA</span>
+                        <span class="lv-prop-price mono">{{ property.price_per_room|floatformat:0 }} FCFA <small style="font-size:0.72em;opacity:0.85;font-weight:500;">{{ property.price_unit_label }}</small></span>
                         <span class="lv-prop-tag"><i class="fas fa-map-marker-alt"></i> {{ property.city }}</span>
                     </div>
                     <div class="lv-prop-body">
@@ -276,9 +297,10 @@
         return [5.36, -4.01];
     }
 
-    // --- Carte Côte d'Ivoire uniquement ---
+    // --- Carte Côte d'Ivoire ---
     if (document.getElementById('ci-map') && typeof L !== 'undefined') {
-        var ciMap = L.map('ci-map', {
+        var mapEl = document.getElementById('ci-map');
+        var ciMap = L.map(mapEl, {
             center: [7.54, -5.55],
             zoom: 7,
             minZoom: 7,
@@ -288,18 +310,46 @@
             worldCopyJump: false
         });
 
+        // OpenStreetMap — libre, sans clé API
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
+            subdomains: 'abc',
+            attribution: '&copy; OpenStreetMap',
+            updateWhenIdle: false,
+            keepBuffer: 2
         }).addTo(ciMap);
 
-        // Cadre initial = tout le pays (pas l'Afrique)
-        ciMap.fitBounds(CI_BOUNDS, { padding: [12, 12], maxZoom: 7 });
-
         var bounds = [];
+        var HOUSE_SVG = {
+            villa: '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-8.5z"/></svg>',
+            house: '<svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20H4v-8.5zm6 2.5h4v6h-4v-6z"/></svg>',
+            residence: '<svg viewBox="0 0 24 24"><path d="M4 21V7l8-4 8 4v14h-5v-6H9v6H4zm5-10h2v2H9v-2zm4 0h2v2h-2v-2zm-4 4h2v2H9v-2zm4 0h2v2h-2v-2z"/></svg>',
+            apartment: '<svg viewBox="0 0 24 24"><path d="M3 21V5h8v4h10v12H3zm3-3h2v-2H6v2zm0-4h2v-2H6v2zm0-4h2V8H6v2zm5 8h2v-2h-2v2zm0-4h2v-2h-2v2zm4 4h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2z"/></svg>',
+            studio: '<svg viewBox="0 0 24 24"><path d="M4 21V10.5L12 4l8 6.5V21h-6v-5H10v5H4z"/></svg>',
+            land: '<svg viewBox="0 0 24 24"><path d="M3 17.5 9 7l4 6.5L16 9l5 8.5H3z"/></svg>'
+        };
+        var TYPE_CLS = {
+            villa: 'lv-map-pin--villa',
+            house: 'lv-map-pin--house',
+            residence: 'lv-map-pin--residence',
+            apartment: 'lv-map-pin--apartment',
+            studio: 'lv-map-pin--studio',
+            land: 'lv-map-pin--land'
+        };
+
+        function houseIcon(type) {
+            var key = TYPE_CLS[type] ? type : 'house';
+            return L.divIcon({
+                className: 'lv-map-marker',
+                html: '<span class="lv-map-pin ' + TYPE_CLS[key] + '">' + HOUSE_SVG[key] + '</span>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 38],
+                popupAnchor: [0, -32]
+            });
+        }
+
         mapMarkers.forEach(function (m) {
             var coords = resolveCoords(m.city, m.lat, m.lng, m.address);
-            // Sécurité : ignorer hors CI
             if (!CI_BOUNDS.contains(coords)) return;
             bounds.push(coords);
 
@@ -307,18 +357,17 @@
                 ? (m.address + (m.city ? ', ' + m.city : ''))
                 : (m.city || '');
 
-            var marker = L.circleMarker(coords, {
-                radius: 10,
-                color: '#1B2A4A',
-                fillColor: '#D9A441',
-                fillOpacity: 0.95,
-                weight: 2
+            var marker = L.marker(coords, {
+                icon: houseIcon(m.property_type),
+                title: (m.type_label || 'Bien') + ' — ' + m.title,
+                riseOnHover: true
             }).addTo(ciMap);
 
             marker.bindPopup(
                 '<div class="lv-map-popup">' +
+                '<div class="type">' + (m.type_label || '') + '</div>' +
                 '<div class="title">' + m.title + '</div>' +
-                '<div class="price">' + m.price + ' FCFA / chambre</div>' +
+                '<div class="price">' + m.price + ' FCFA ' + (m.price_unit || '') + '</div>' +
                 '<div style="font-size:0.8rem;margin:6px 0;color:#666;">' +
                 '<i class="fas fa-map-marker-alt"></i> ' + placeLabel + ' · ' + m.rooms + ' pièces</div>' +
                 '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
@@ -328,7 +377,6 @@
                 { maxWidth: 280 }
             );
 
-            // Zoom sur la maison au clic (vue rue / quartier)
             marker.on('click', function () {
                 ciMap.flyTo(coords, Math.max(ciMap.getZoom(), 15), {
                     animate: true,
@@ -337,11 +385,41 @@
             });
         });
 
-        if (bounds.length > 1) {
-            ciMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
-        } else if (bounds.length === 1) {
-            ciMap.setView(bounds[0], 14);
+        function applyView() {
+            if (bounds.length > 1) {
+                ciMap.fitBounds(bounds, { padding: [48, 48], maxZoom: 10, animate: false });
+            } else if (bounds.length === 1) {
+                ciMap.setView(bounds[0], 13, { animate: false });
+            } else {
+                ciMap.fitBounds(CI_BOUNDS, { padding: [12, 12], maxZoom: 7, animate: false });
+            }
         }
+
+        function refreshMap() {
+            ciMap.invalidateSize({ pan: false });
+            applyView();
+            // 2e passage : après recalcul du layout (splash / fonts)
+            requestAnimationFrame(function () {
+                ciMap.invalidateSize({ pan: false });
+            });
+        }
+
+        // Premier rendu dès que le conteneur a une taille réelle
+        if (mapEl.offsetWidth > 0 && mapEl.offsetHeight > 0) {
+            refreshMap();
+        } else {
+            setTimeout(refreshMap, 50);
+        }
+
+        // Après splash d’accueil, redimensionnement, chargement complet
+        window.addEventListener('lv:layout-ready', refreshMap);
+        window.addEventListener('load', refreshMap);
+        window.addEventListener('resize', function () {
+            ciMap.invalidateSize({ pan: false });
+        });
+        // Filet de sécurité si le splash n’a pas tourné
+        setTimeout(refreshMap, 400);
+        setTimeout(refreshMap, 1200);
     }
 
     // --- Carrousels photos ---

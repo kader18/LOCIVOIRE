@@ -10,9 +10,20 @@ class Property(models.Model):
     PROPERTY_TYPE_CHOICES = [
         ('house', 'Maison'),
         ('apartment', 'Appartement'),
+        ('residence', 'Résidence'),
         ('villa', 'Villa'),
         ('studio', 'Studio'),
         ('land', 'Terrain'),
+    ]
+
+    RENTAL_MODE_CHOICES = [
+        ('entire', 'Bien entier (résidence / logement complet)'),
+        ('by_room', 'Par chambre'),
+    ]
+
+    PRICE_PERIOD_CHOICES = [
+        ('month', 'Par mois'),
+        ('night', 'Par nuit'),
     ]
     
     STATUS_CHOICES = [
@@ -40,6 +51,18 @@ class Property(models.Model):
         max_length=20,
         choices=PROPERTY_TYPE_CHOICES,
         verbose_name="Type de propriété"
+    )
+    rental_mode = models.CharField(
+        max_length=20,
+        choices=RENTAL_MODE_CHOICES,
+        default='entire',
+        verbose_name="Mode de location"
+    )
+    price_period = models.CharField(
+        max_length=10,
+        choices=PRICE_PERIOD_CHOICES,
+        default='month',
+        verbose_name="Période de tarif"
     )
     address = models.CharField(
         max_length=255,
@@ -72,7 +95,7 @@ class Property(models.Model):
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(0)],
-        verbose_name="Prix par chambre (FCFA)"
+        verbose_name="Prix (FCFA)"
     )
     number_of_rooms = models.PositiveIntegerField(
         verbose_name="Nombre de pièces"
@@ -121,6 +144,41 @@ class Property(models.Model):
     @property
     def is_available(self):
         return self.status == 'available'
+
+    @property
+    def is_entire_rental(self):
+        return self.rental_mode == 'entire'
+
+    @property
+    def is_monthly(self):
+        return self.price_period == 'month'
+
+    @property
+    def price_unit_label(self):
+        """Ex. : « / mois », « / chambre / nuit »."""
+        if self.is_entire_rental:
+            return '/ mois' if self.is_monthly else '/ nuit'
+        return '/ chambre / mois' if self.is_monthly else '/ chambre / nuit'
+
+    @property
+    def price_headline(self):
+        if self.is_entire_rental:
+            return 'Loyer mensuel' if self.is_monthly else 'Prix par nuit'
+        return 'Prix / chambre / mois' if self.is_monthly else 'Prix / chambre / nuit'
+
+    def billing_units(self, start_date, end_date):
+        """Nombre d'unités tarifaires (mois ou nuits) entre deux dates."""
+        from math import ceil
+        days = max((end_date - start_date).days, 1)
+        if self.is_monthly:
+            return max(1, ceil(days / 30))
+        return days
+
+    def compute_booking_price(self, start_date, end_date, number_of_rooms=1):
+        from decimal import Decimal
+        units = self.billing_units(start_date, end_date)
+        rooms = 1 if self.is_entire_rental else max(int(number_of_rooms or 1), 1)
+        return Decimal(self.price_per_room) * rooms * units
 
 
 class Room(models.Model):

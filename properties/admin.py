@@ -16,10 +16,10 @@ class RoomInline(admin.TabularInline):
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
     list_display = [
-        'title', 'owner', 'property_type', 'city', 'price_per_room',
-        'number_of_rooms', 'status', 'is_featured', 'created_at',
+        'title', 'owner', 'property_type', 'rental_mode', 'price_period',
+        'city', 'price_per_room', 'number_of_rooms', 'status', 'is_featured', 'created_at',
     ]
-    list_filter = ['property_type', 'status', 'is_featured', 'city', 'created_at']
+    list_filter = ['property_type', 'rental_mode', 'price_period', 'status', 'is_featured', 'city', 'created_at']
     search_fields = ['title', 'description', 'address', 'city', 'owner__username']
     readonly_fields = ['created_at', 'updated_at']
     inlines = [PropertyImageInline, RoomInline]
@@ -28,13 +28,16 @@ class PropertyAdmin(admin.ModelAdmin):
         ('Informations générales', {
             'fields': ('owner', 'title', 'description', 'property_type', 'status', 'is_featured'),
         }),
+        ('Location', {
+            'fields': ('rental_mode', 'price_period', 'price_per_room'),
+        }),
         ('Localisation', {
             'fields': ('address', 'city', 'country', 'latitude', 'longitude'),
         }),
         ('Caractéristiques', {
             'fields': (
                 'number_of_rooms', 'number_of_bedrooms', 'number_of_bathrooms',
-                'area', 'price_per_room',
+                'area',
             ),
         }),
         ('Dates', {

@@ -53,14 +53,15 @@ def create_booking(request, property_id):
             messages.error(request, 'La date de début ne peut pas être dans le passé.')
             return redirect('properties:property_detail', pk=property_id)
         
-        if number_of_rooms > property_obj.number_of_rooms:
+        if number_of_rooms > property_obj.number_of_rooms and not property_obj.is_entire_rental:
             messages.error(request, f'Le nombre de chambres demandé dépasse le nombre disponible ({property_obj.number_of_rooms}).')
             return redirect('properties:property_detail', pk=property_id)
-        
-        # Calculer le prix total
-        days = (end - start).days
-        total_price = property_obj.price_per_room * number_of_rooms * days
-        
+
+        if property_obj.is_entire_rental:
+            number_of_rooms = 1
+
+        total_price = property_obj.compute_booking_price(start, end, number_of_rooms)
+
         # Créer la réservation
         booking = Booking.objects.create(
             tenant=request.user,
@@ -72,8 +73,14 @@ def create_booking(request, property_id):
             message=message,
             status='pending'
         )
-        
-        messages.success(request, 'Réservation créée avec succès ! En attente de confirmation du propriétaire.')
+
+        if property_obj.is_monthly:
+            messages.success(
+                request,
+                'Demande de location envoyée ! En attente de confirmation du propriétaire.',
+            )
+        else:
+            messages.success(request, 'Réservation créée avec succès ! En attente de confirmation du propriétaire.')
         return redirect('bookings:booking_detail', pk=booking.pk)
     
     return redirect('properties:property_detail', pk=property_id)

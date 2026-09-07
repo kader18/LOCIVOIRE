@@ -448,10 +448,11 @@ class Command(BaseCommand):
                 "owner": soro,
                 "description": "Villa moderne 5 chambres à Cocody. Jardin, garage, sécurité 24/7. Visite immersive disponible.",
                 "property_type": "villa",
+                "rental_mode": "entire", "price_period": "month",
                 "address": "Cocody · Rue des Ambassades",
                 "city": "Abidjan",
                 "lat": 5.3599, "lng": -3.9880,
-                "price": 120000, "rooms": 10, "beds": 5, "baths": 3, "area": 350,
+                "price": 450000, "rooms": 10, "beds": 5, "baths": 3, "area": 350,
                 "featured": True, "room_defs": ROOMS_VILLA,
             },
             {
@@ -459,10 +460,11 @@ class Command(BaseCommand):
                 "owner": jean,
                 "description": "Villa de standing avec piscine privée et jardin tropical. Quartier Riviera, Abidjan.",
                 "property_type": "villa",
+                "rental_mode": "entire", "price_period": "month",
                 "address": "Riviera · Boulevard de la République",
                 "city": "Abidjan",
                 "lat": 5.3400, "lng": -3.9600,
-                "price": 150000, "rooms": 8, "beds": 4, "baths": 4, "area": 450,
+                "price": 550000, "rooms": 8, "beds": 4, "baths": 4, "area": 450,
                 "featured": True, "room_defs": ROOMS_VILLA,
             },
             {
@@ -470,10 +472,11 @@ class Command(BaseCommand):
                 "owner": soro,
                 "description": "Maison récente 3 chambres, cour arrière, proche transports. Yopougon, Abidjan.",
                 "property_type": "house",
+                "rental_mode": "entire", "price_period": "month",
                 "address": "Yopougon · Boulevard de la Paix",
                 "city": "Abidjan",
                 "lat": 5.3364, "lng": -4.0880,
-                "price": 75000, "rooms": 6, "beds": 3, "baths": 2, "area": 180,
+                "price": 180000, "rooms": 6, "beds": 3, "baths": 2, "area": 180,
                 "featured": False, "room_defs": ROOMS_HOUSE,
             },
             {
@@ -481,11 +484,36 @@ class Command(BaseCommand):
                 "owner": soro,
                 "description": "Appartement meublé en résidence sécurisée. Balcon, parking. Marcory, Abidjan.",
                 "property_type": "apartment",
+                "rental_mode": "entire", "price_period": "month",
                 "address": "Marcory · Avenue Franchet d'Esperey",
                 "city": "Abidjan",
                 "lat": 5.2970, "lng": -3.9950,
-                "price": 60000, "rooms": 4, "beds": 2, "baths": 1, "area": 95,
+                "price": 160000, "rooms": 4, "beds": 2, "baths": 1, "area": 95,
                 "featured": True, "room_defs": ROOMS_APT,
+            },
+            {
+                "title": "Résidence Les Palmiers — Plateau",
+                "owner": jean,
+                "description": "Résidence sécurisée avec gardiennage. Appartement F3 lumineux, proche des affaires. Location du logement complet.",
+                "property_type": "residence",
+                "rental_mode": "entire", "price_period": "month",
+                "address": "Plateau · Avenue Clozel",
+                "city": "Abidjan",
+                "lat": 5.3230, "lng": -4.0210,
+                "price": 220000, "rooms": 5, "beds": 3, "baths": 2, "area": 140,
+                "featured": True, "room_defs": ROOMS_APT,
+            },
+            {
+                "title": "Résidence étudiante — Cocody II Plateaux",
+                "owner": soro,
+                "description": "Chambres meublées en résidence étudiante, wifi et sécurité. Location à la chambre / mois.",
+                "property_type": "residence",
+                "rental_mode": "by_room", "price_period": "month",
+                "address": "Cocody · II Plateaux Vallon",
+                "city": "Abidjan",
+                "lat": 5.3550, "lng": -3.9980,
+                "price": 45000, "rooms": 12, "beds": 12, "baths": 6, "area": 600,
+                "featured": True, "room_defs": ROOMS_HOUSE,
             },
             {
                 "title": "Studio meublé — Plateau Centre",
@@ -663,6 +691,8 @@ class Command(BaseCommand):
                     "owner": item["owner"],
                     "description": item["description"],
                     "property_type": item["property_type"],
+                    "rental_mode": item.get("rental_mode", "entire"),
+                    "price_period": item.get("price_period", "month"),
                     "address": item["address"],
                     "city": item["city"],
                     "country": "Côte d'Ivoire",
@@ -812,8 +842,9 @@ class Command(BaseCommand):
             (kader, props[4][0], today + timedelta(days=3), today + timedelta(days=10), "pending", 1),
         ]
         for tenant, prop, start, end, status, nrooms in samples:
-            days = (end - start).days
-            total = prop.price_per_room * nrooms * days
+            if prop.is_entire_rental:
+                nrooms = 1
+            total = prop.compute_booking_price(start, end, nrooms)
             booking, created = Booking.objects.get_or_create(
                 tenant=tenant,
                 property_obj=prop,

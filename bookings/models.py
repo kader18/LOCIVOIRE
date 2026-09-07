@@ -79,10 +79,13 @@ class Booking(models.Model):
     
     def save(self, *args, **kwargs):
         # Calculer le prix total si non fourni
-        if not self.total_price and self.property_obj and self.number_of_rooms:
-            days = (self.end_date - self.start_date).days
-            if days > 0:
-                self.total_price = self.property_obj.price_per_room * self.number_of_rooms * days
+        if not self.total_price and self.property_obj and self.start_date and self.end_date:
+            rooms = self.number_of_rooms or 1
+            if self.property_obj.is_entire_rental:
+                rooms = 1
+            self.total_price = self.property_obj.compute_booking_price(
+                self.start_date, self.end_date, rooms
+            )
         super().save(*args, **kwargs)
     
     @property
@@ -91,6 +94,17 @@ class Booking(models.Model):
         if self.start_date and self.end_date:
             return (self.end_date - self.start_date).days
         return 0
+
+    @property
+    def duration_label(self):
+        """Libellé humain : mois ou nuits selon le bien."""
+        prop = self.property_obj
+        if not prop:
+            return f'{self.duration_days} j'
+        units = prop.billing_units(self.start_date, self.end_date) if self.start_date and self.end_date else 0
+        if prop.is_monthly:
+            return f'{units} mois' if units > 1 else '1 mois'
+        return f'{units} nuit{"s" if units > 1 else ""}'
     
     @property
     def is_pending(self):

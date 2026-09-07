@@ -310,7 +310,7 @@
                     </div>
                     <div class="bd-tile">
                         <p class="bd-tile__label">Durée</p>
-                        <p class="bd-tile__value">{{ booking.duration_days }} jour{{ booking.duration_days|pluralize }}</p>
+                        <p class="bd-tile__value">{{ booking.duration_label }}</p>
                     </div>
                     <div class="bd-tile">
                         <p class="bd-tile__label">Chambres</p>
@@ -363,7 +363,7 @@
                 <p class="bd-price-card__label">Prix total</p>
                 <p class="bd-price-card__value">{{ booking.total_price|floatformat:0 }} FCFA</p>
                 <p class="bd-price-card__hint">
-                    {{ booking.duration_days }} nuit{{ booking.duration_days|pluralize }}
+                    {{ booking.duration_label }}
                     · {{ booking.number_of_rooms }} chambre{{ booking.number_of_rooms|pluralize }}
                 </p>
             </div>

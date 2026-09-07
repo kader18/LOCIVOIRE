@@ -286,7 +286,7 @@
                 <ul class="bk-meta">
                     <li><i class="fas fa-map-marker-alt" aria-hidden="true"></i>{{ prop.city }}{% if prop.address %} · {{ prop.address|truncatechars:28 }}{% endif %}</li>
                     <li><i class="fas fa-calendar-alt" aria-hidden="true"></i>{{ booking.start_date|date:"j M Y" }} – {{ booking.end_date|date:"j M Y" }}</li>
-                    <li><i class="fas fa-moon" aria-hidden="true"></i>{{ booking.duration_days }} nuit{{ booking.duration_days|pluralize }}</li>
+                    <li><i class="fas fa-calendar-alt" aria-hidden="true"></i>{{ booking.duration_label }}</li>
                     <li><i class="fas fa-bed" aria-hidden="true"></i>{{ booking.number_of_rooms }} chambre{{ booking.number_of_rooms|pluralize }}</li>
                 </ul>
                 {% if user.is_owner %}
@@ -299,7 +299,7 @@
                     <p class="bk-price-label">Total</p>
                     <p class="bk-price">
                         {{ booking.total_price|floatformat:0 }} FCFA
-                        <span>{{ booking.duration_days }} j · {{ booking.number_of_rooms }} ch.</span>
+                        <span>{{ booking.duration_label }}{% if not booking.property_obj.is_entire_rental %} · {{ booking.number_of_rooms }} ch.{% endif %}</span>
                     </p>
                 </div>
                 <a href="{% url 'bookings:booking_detail' booking.pk %}" class="btn-gold">
