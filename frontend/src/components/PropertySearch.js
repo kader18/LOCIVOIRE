@@ -41,6 +41,7 @@ const PropertySearch = () => {
             <option value="">Tous les types</option>
             <option value="house">Maison</option>
             <option value="apartment">Appartement</option>
+            <option value="residence">Résidence</option>
             <option value="villa">Villa</option>
             <option value="studio">Studio</option>
           </select>

@@ -2,12 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import PropertySearch from './components/PropertySearch';
 import PropertyCard from './components/PropertyCard';
-import FilterPanel from './components/FilterPanel';
 
 // Exposer les composants globalement pour utilisation dans les templates Django
 window.PropertySearch = PropertySearch;
 window.PropertyCard = PropertyCard;
-window.FilterPanel = FilterPanel;
 window.React = React;
 window.ReactDOM = ReactDOM;
 
@@ -28,4 +26,3 @@ document.addEventListener('DOMContentLoaded', function() {
     root.render(<PropertyCard property={propertyData} />);
   });
 });
-
