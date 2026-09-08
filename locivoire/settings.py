@@ -15,6 +15,11 @@ def _database_from_url(url: str) -> dict:
     parsed = urlparse(url)
     scheme = (parsed.scheme or '').lower()
     if scheme in ('postgres', 'postgresql'):
+        # Render Postgres exige SSL (externe et souvent interne)
+        options = {}
+        query = (parsed.query or '').lower()
+        if 'sslmode=' not in query:
+            options['sslmode'] = 'require'
         return {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': unquote((parsed.path or '/')[1:]),
@@ -24,7 +29,7 @@ def _database_from_url(url: str) -> dict:
             'PORT': str(parsed.port or 5432),
             'CONN_MAX_AGE': 600,
             'CONN_HEALTH_CHECKS': True,
-            'OPTIONS': {},
+            'OPTIONS': options,
         }
     if scheme == 'sqlite':
         name = unquote((parsed.path or '').lstrip('/'))
