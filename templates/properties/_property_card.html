@@ -1,0 +1,58 @@
+{% load static %}
+<article class="lv-prop-card{% if property.property_type == 'residence' %} lv-prop-card--residence{% endif %}">
+    <div class="lv-prop-media">
+        {% with normals=property.card_images %}
+        {% if normals %}
+            <div class="lv-carousel" data-carousel>
+                <div class="lv-carousel__track">
+                    {% for img in normals %}
+                        <img src="{{ img.image.url }}" alt="{{ property.title }} — {{ forloop.counter }}" class="{% if forloop.first %}is-active{% endif %}" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+                    {% endfor %}
+                </div>
+                {% if normals|length > 1 %}
+                <button type="button" class="lv-carousel__nav prev" data-carousel-prev aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
+                <button type="button" class="lv-carousel__nav next" data-carousel-next aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
+                <div class="lv-carousel__dots" data-carousel-dots></div>
+                {% endif %}
+            </div>
+        {% else %}
+            <svg class="skyline-fallback" viewBox="0 0 300 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 80 L0 60 L20 60 L20 40 L35 40 L35 70 L55 70 L55 30 L65 30 L65 15 L75 15 L75 50 L100 50 L100 60 L120 60 L120 25 L130 25 L130 10 L140 10 L140 25 L150 25 L150 70 L180 70 L180 45 L195 45 L195 80 L220 80 L220 20 L232 20 L232 5 L242 5 L242 20 L252 20 L252 80 L300 80 L300 90 L0 90 Z" fill="rgba(217,164,65,0.5)"/>
+            </svg>
+        {% endif %}
+        {% endwith %}
+        <span class="lv-prop-price mono">{{ property.price_per_room|floatformat:0 }} FCFA <small>{{ property.price_unit_label }}</small></span>
+        <span class="lv-prop-tag"><i class="fas fa-map-marker-alt"></i> {{ property.city }}</span>
+    </div>
+    <div class="lv-prop-body">
+        <div class="lv-prop-badges">
+            <span class="lv-prop-type lv-prop-type--{{ property.property_type }}">{{ property.get_property_type_display }}</span>
+            {% if property.property_type == 'residence' or property.rental_mode == 'by_room' or property.price_period == 'night' %}
+            <span class="lv-prop-mode">
+                {% if property.rental_mode == 'by_room' %}Par chambre{% else %}Logement complet{% endif %}
+                · {% if property.price_period == 'night' %}À la nuit{% else %}Au mois{% endif %}
+            </span>
+            {% endif %}
+        </div>
+        <h3 class="lv-prop-title">{{ property.title }}</h3>
+        <div class="lv-prop-loc">
+            <i class="fas fa-map-marker-alt"></i>
+            {{ property.city }}{% if property.address %}, {{ property.address|truncatechars:28 }}{% endif %}
+        </div>
+        <div class="lv-prop-meta">
+            <span><i class="fas fa-bed"></i> {{ property.number_of_rooms }} pièces</span>
+            <span><i class="fas fa-bath"></i> {{ property.number_of_bathrooms }} sdb</span>
+            {% if property.area %}
+            <span><i class="fas fa-ruler-combined"></i> {{ property.area }} m²</span>
+            {% endif %}
+        </div>
+        <div class="lv-prop-actions">
+            <a class="lv-btn-3d" href="{% url 'bookings:ar_demo' property.pk %}">
+                <i class="fas fa-cube"></i> Visite 3D
+            </a>
+            <a class="lv-prop-link" href="{% url 'properties:property_detail' property.pk %}">
+                Détails <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</article>

@@ -338,7 +338,7 @@ a { text-decoration: none; color: inherit; }
   position: relative;
   background: var(--navy);
   overflow: hidden;
-  padding: 64px 48px 150px;
+  padding: 64px 48px 170px;
 }
 
 .lv-hero-skyline {
@@ -450,6 +450,56 @@ a { text-decoration: none; color: inherit; }
   color: #fff;
 }
 
+.lv-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+  position: relative;
+  z-index: 2;
+}
+
+.lv-type-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.lv-type-tab em {
+  font-style: normal;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.lv-type-tab:hover {
+  color: #fff;
+  border-color: rgba(217, 164, 65, 0.55);
+  transform: translateY(-1px);
+}
+
+.lv-type-tab.is-active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--navy-deep);
+}
+
+.lv-type-tab.is-active em { opacity: 1; color: var(--navy-deep); }
+
+.lv-type-tab--residence:not(.is-active) {
+  border-color: rgba(217, 164, 65, 0.45);
+  color: #fff;
+  background: rgba(217, 164, 65, 0.12);
+}
+
 @media (max-width: 768px) {
   .lv-hero { padding: 40px 20px 120px; }
   .lv-f-price { width: 100%; flex: 1; min-width: 120px; }
@@ -496,6 +546,91 @@ a { text-decoration: none; color: inherit; }
   .lv-section { padding: 40px 20px; }
 }
 
+/* ---------- Résidences spotlight ---------- */
+.lv-residence-band {
+  background:
+    radial-gradient(ellipse 70% 80% at 8% 20%, rgba(217, 164, 65, 0.14), transparent 55%),
+    linear-gradient(165deg, #152238 0%, #1B2A4A 45%, #243656 100%);
+  padding: 56px 0 48px;
+  margin-top: -8px;
+}
+
+.lv-residence-band__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+.lv-residence-band .lv-section-head {
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.lv-residence-band__eyebrow {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.lv-residence-band h2 {
+  color: #fff;
+  margin: 0;
+}
+
+.lv-residence-band__lead {
+  color: #A8B3C7;
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  max-width: 420px;
+}
+
+.lv-residence-band__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: color 0.15s, gap 0.15s;
+}
+
+.lv-residence-band__cta:hover {
+  color: #fff;
+  gap: 12px;
+}
+
+.lv-residence-band .lv-section-underline {
+  background: var(--gold);
+  margin-bottom: 28px;
+}
+
+.lv-residence-band .lv-prop-card {
+  border: none;
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.45);
+  animation: lvCardIn 0.55s ease both;
+}
+
+.lv-residence-band .lv-prop-card:nth-child(2) { animation-delay: 0.06s; }
+.lv-residence-band .lv-prop-card:nth-child(3) { animation-delay: 0.12s; }
+.lv-residence-band .lv-prop-card:nth-child(4) { animation-delay: 0.18s; }
+.lv-residence-band .lv-prop-card:nth-child(5) { animation-delay: 0.24s; }
+.lv-residence-band .lv-prop-card:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes lvCardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .lv-residence-band__inner { padding: 0 20px; }
+  .lv-residence-band { padding: 40px 0 32px; }
+}
+
 /* ---------- Property cards ---------- */
 .lv-grid {
   display: grid;
@@ -511,20 +646,25 @@ a { text-decoration: none; color: inherit; }
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .lv-prop-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 40px -18px rgba(20, 23, 31, 0.25);
+  transform: translateY(-6px);
+  box-shadow: 0 22px 44px -18px rgba(20, 23, 31, 0.28);
+  border-color: rgba(217, 164, 65, 0.35);
+}
+
+.lv-prop-card--residence {
+  border-color: rgba(61, 106, 168, 0.28);
 }
 
 .lv-prop-media {
   position: relative;
-  height: 190px;
+  height: 210px;
   background: linear-gradient(160deg, var(--navy) 0%, #2C4066 100%);
   display: flex;
   align-items: flex-end;
@@ -681,13 +821,22 @@ a { text-decoration: none; color: inherit; }
   padding: 6px 11px;
   border-radius: 6px;
   z-index: 2;
+  max-width: calc(100% - 110px);
+  line-height: 1.25;
+}
+
+.lv-prop-price small {
+  display: inline;
+  font-size: 0.72em;
+  opacity: 0.85;
+  font-weight: 500;
 }
 
 .lv-prop-tag {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(16, 26, 48, 0.72);
   color: #fff;
   backdrop-filter: blur(4px);
   font-size: 0.72rem;
@@ -698,6 +847,45 @@ a { text-decoration: none; color: inherit; }
   align-items: center;
   gap: 5px;
   z-index: 2;
+}
+
+.lv-prop-type {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(27, 42, 74, 0.08);
+  color: var(--navy);
+}
+
+.lv-prop-type--residence {
+  background: #3d6aa8;
+  color: #fff;
+}
+
+.lv-prop-type--villa { background: rgba(217, 164, 65, 0.22); color: var(--navy-deep); }
+.lv-prop-type--house { background: rgba(27, 42, 74, 0.9); color: #fff; }
+.lv-prop-type--apartment { background: #5a7a9a; color: #fff; }
+.lv-prop-type--studio { background: #c47a3a; color: #fff; }
+.lv-prop-type--land { background: #3d8f6a; color: #fff; }
+
+.lv-prop-mode {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(47, 111, 107, 0.12);
+  color: var(--teal);
+  line-height: 1.25;
+}
+
+.lv-prop-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .lv-prop-body {

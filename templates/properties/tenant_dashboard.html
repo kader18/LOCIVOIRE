@@ -1,94 +1,332 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Mon tableau de bord - Locivoire{% endblock %}
+{% block title %}Mon espace — Locivoire{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <h1 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Mon tableau de bord</h1>
-    
-    <!-- Bookings Section -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Mes réservations</h3>
-        </div>
-        <div class="card-body">
-            {% if bookings %}
-                <div class="list-group">
-                    {% for booking in bookings %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <div>
-                                    <h5 class="mb-1">{{ booking.property_obj.title }}</h5>
-                                    <p class="mb-1">
-                                        <i class="fas fa-map-marker-alt me-1"></i>{{ booking.property_obj.city }}
-                                    </p>
-                                    <p class="mb-1">
-                                        <i class="fas fa-calendar me-1"></i>
-                                        {{ booking.start_date }} - {{ booking.end_date }}
-                                    </p>
-                                    <p class="mb-0">
-                                        <i class="fas fa-money-bill-wave me-1"></i>
-                                        {{ booking.total_price|floatformat:0 }} FCFA
-                                    </p>
-                                </div>
-                                <div>
-                                    <span class="badge bg-{% if booking.status == 'approved' %}success{% elif booking.status == 'pending' %}warning{% else %}danger{% endif %} mb-2">
-                                        {{ booking.get_status_display }}
-                                    </span>
-                                    <br>
-                                    <a href="{% url 'bookings:booking_detail' booking.pk %}" 
-                                       class="btn btn-sm btn-primary mt-2">
-                                        Détails
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-muted">Aucune réservation pour le moment. 
-                    <a href="{% url 'properties:property_list' %}">Recherchez une propriété</a>
-                </p>
-            {% endif %}
-        </div>
-    </div>
-    
-    <!-- Favorites Section -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="mb-0"><i class="fas fa-heart me-2"></i>Mes favoris</h3>
-        </div>
-        <div class="card-body">
-            {% if favorites %}
-                <div class="row g-4">
-                    {% for favorite in favorites %}
-                        <div class="col-md-6 col-lg-4">
-                            <div class="card h-100">
-                                {% if favorite.property_obj.images.first %}
-                                    <img src="{{ favorite.property_obj.images.first.image.url }}" 
-                                         class="card-img-top" alt="{{ favorite.property_obj.title }}"
-                                         style="height: 200px; object-fit: cover;">
-                                {% endif %}
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ favorite.property_obj.title }}</h5>
-                                    <p class="text-muted">{{ favorite.property_obj.city }}</p>
-                                    <p class="h6 text-primary">
-                                        {{ favorite.property_obj.price_per_room|floatformat:0 }} FCFA / chambre
-                                    </p>
-                                    <a href="{% url 'properties:property_detail' favorite.property_obj.pk %}" 
-                                       class="btn btn-primary btn-sm">
-                                        Voir
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-muted">Aucun favori pour le moment.</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
+{% block extra_css %}
+<style>
+  .td {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 28px 40px 64px;
+  }
+  .td-hero {
+    margin-bottom: 22px;
+    padding: 26px 28px;
+    border-radius: 16px;
+    background:
+      linear-gradient(135deg, rgba(217,164,65,0.14) 0%, transparent 42%),
+      linear-gradient(160deg, #101A30 0%, #1B2A4A 55%, #243656 100%);
+    color: #fff;
+  }
+  .td-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 8px;
+  }
+  .td-hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(1.5rem, 2.8vw, 2rem);
+    margin: 0 0 6px;
+  }
+  .td-hero p {
+    margin: 0;
+    opacity: 0.72;
+    font-size: 0.95rem;
+  }
+  .td-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .td-stat {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .td-stat__label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .td-stat__value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--navy-deep);
+    line-height: 1;
+  }
+
+  .td-section {
+    margin-bottom: 28px;
+  }
+  .td-section__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .td-section__head h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.25rem;
+    color: var(--navy-deep);
+    margin: 0;
+  }
+  .td-section__link {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--gold-deep);
+    text-decoration: none;
+  }
+  .td-section__link:hover { color: var(--navy); }
+
+  .td-booking {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px 24px;
+    align-items: center;
+    padding: 18px 20px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 10px;
+  }
+  .td-booking__title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.08rem;
+    color: var(--navy-deep);
+    margin: 0 0 4px;
+  }
+  .td-booking__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .td-booking__meta i { color: var(--gold-deep); margin-right: 4px; }
+  .td-booking__price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    color: var(--navy-deep);
+    font-size: 0.95rem;
+  }
+  .td-booking__side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .td-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .td-badge--pending { background: rgba(217,164,65,0.18); color: #8a6418; }
+  .td-badge--approved { background: rgba(45,122,74,0.14); color: #1b6b3a; }
+  .td-badge--rejected,
+  .td-badge--cancelled { background: rgba(196,92,74,0.14); color: #8a3328; }
+  .td-badge--completed { background: rgba(27,42,74,0.1); color: var(--navy); }
+
+  .td-fav-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .td-fav {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .td-fav:hover {
+    border-color: rgba(217,164,65,0.55);
+    transform: translateY(-2px);
+    color: inherit;
+  }
+  .td-fav__img {
+    height: 160px;
+    background: var(--navy);
+    overflow: hidden;
+  }
+  .td-fav__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .td-fav__body { padding: 14px 16px 16px; }
+  .td-fav__title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.02rem;
+    margin: 0 0 4px;
+    color: var(--navy-deep);
+  }
+  .td-fav__loc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0 0 8px;
+  }
+  .td-fav__price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--gold-deep);
+    margin: 0;
+  }
+
+  .td-empty {
+    padding: 28px 22px;
+    border: 1.5px dashed var(--line);
+    border-radius: 14px;
+    text-align: center;
+    color: var(--muted);
+    background: rgba(27,42,74,0.02);
+  }
+  .td-empty p { margin: 0 0 14px; }
+  .td-empty a.btn-gold { display: inline-flex; }
+
+  @media (max-width: 1100px) {
+    .td-fav-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .td { padding: 22px 20px 48px; }
+    .td-stats { grid-template-columns: 1fr; }
+    .td-fav-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .td-booking {
+      grid-template-columns: 1fr;
+    }
+    .td-booking__side {
+      align-items: flex-start;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    .td-fav-grid { grid-template-columns: 1fr; }
+  }
+</style>
 {% endblock %}
 
+{% block content %}
+<div class="td">
+    <header class="td-hero">
+        <p class="td-eyebrow">Espace locataire · Côte d’Ivoire</p>
+        <h1>Bonjour{% if user.first_name %}, {{ user.first_name }}{% endif %}</h1>
+        <p>Suivez vos demandes de location et retrouvez vos biens favoris.</p>
+    </header>
+
+    <div class="td-stats">
+        <div class="td-stat">
+            <div class="td-stat__label">Réservations</div>
+            <div class="td-stat__value">{{ bookings|length }}</div>
+        </div>
+        <div class="td-stat">
+            <div class="td-stat__label">En attente</div>
+            <div class="td-stat__value">{{ pending_count }}</div>
+        </div>
+        <div class="td-stat">
+            <div class="td-stat__label">Favoris</div>
+            <div class="td-stat__value">{{ favorites|length }}</div>
+        </div>
+    </div>
+
+    <section class="td-section">
+        <div class="td-section__head">
+            <h2>Mes demandes</h2>
+            <a class="td-section__link" href="{% url 'bookings:booking_list' %}">Tout voir</a>
+        </div>
+
+        {% if bookings %}
+            {% for booking in bookings %}
+            <article class="td-booking">
+                <div>
+                    <h3 class="td-booking__title">{{ booking.property_obj.title }}</h3>
+                    <ul class="td-booking__meta">
+                        <li><i class="fas fa-map-marker-alt" aria-hidden="true"></i>{{ booking.property_obj.city }}</li>
+                        <li><i class="fas fa-calendar-alt" aria-hidden="true"></i>{{ booking.start_date|date:"d M Y" }} → {{ booking.end_date|date:"d M Y" }}</li>
+                        <li class="td-booking__price">{{ booking.total_price|floatformat:0 }} FCFA · {{ booking.duration_label }}</li>
+                    </ul>
+                </div>
+                <div class="td-booking__side">
+                    <span class="td-badge td-badge--{{ booking.status }}">{{ booking.get_status_display }}</span>
+                    <a href="{% url 'bookings:booking_detail' booking.pk %}" class="btn-outline" style="padding:8px 14px;font-size:0.85rem;">
+                        Détails
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <div class="td-empty">
+                <p>Aucune demande pour le moment.</p>
+                <a href="{% url 'properties:property_list' %}" class="btn-gold">
+                    <i class="fas fa-search" aria-hidden="true"></i> Chercher un logement
+                </a>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="td-section">
+        <div class="td-section__head">
+            <h2>Mes favoris</h2>
+            <a class="td-section__link" href="{% url 'properties:property_list' %}">Explorer</a>
+        </div>
+
+        {% if favorites %}
+            <div class="td-fav-grid">
+                {% for favorite in favorites %}
+                <a class="td-fav" href="{% url 'properties:property_detail' favorite.property_obj.pk %}">
+                    <div class="td-fav__img">
+                        {% with img=favorite.property_obj.images.first %}
+                        {% if img %}
+                            <img src="{{ img.image.url }}" alt="{{ favorite.property_obj.title }}" loading="lazy">
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="td-fav__body">
+                        <h3 class="td-fav__title">{{ favorite.property_obj.title }}</h3>
+                        <p class="td-fav__loc">{{ favorite.property_obj.city }}</p>
+                        <p class="td-fav__price">
+                            {{ favorite.property_obj.price_per_room|floatformat:0 }} FCFA {{ favorite.property_obj.price_unit_label }}
+                        </p>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="td-empty">
+                <p>Aucun favori enregistré.</p>
+                <a href="{% url 'properties:property_list' %}" class="btn-gold">
+                    <i class="fas fa-home" aria-hidden="true"></i> Voir les biens
+                </a>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

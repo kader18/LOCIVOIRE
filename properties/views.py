@@ -70,7 +70,25 @@ def property_list(request):
         except ValueError:
             pass
 
+    # Accueil : résidences en section dédiée, liste = autres types
+    show_residence_band = not property_type and not search_query
+    residence_base = Property.objects.filter(status='available', property_type='residence')
+    if show_residence_band:
+        properties = properties.exclude(property_type='residence')
+
     total_count = properties.count()
+    residence_count_all = residence_base.count()
+
+    type_counts = {
+        row['property_type']: row['count']
+        for row in Property.objects.filter(status='available')
+        .values('property_type')
+        .annotate(count=Count('id'))
+    }
+    type_tabs = [
+        (value, label, type_counts.get(value, 0))
+        for value, label in Property.PROPERTY_TYPE_CHOICES
+    ]
 
     city_stats = list(
         Property.objects.filter(status='available')
@@ -90,6 +108,34 @@ def property_list(request):
         if name not in city_chips:
             city_chips.append(name)
     city_chips = city_chips[:10]
+
+    residence_spotlight = []
+    if show_residence_band:
+        residence_qs = residence_base.select_related('owner').prefetch_related('images')
+        if city:
+            city_key = city.strip().lower()
+            if city_key in ABIDJAN_QUARTIERS:
+                residence_qs = residence_qs.filter(
+                    Q(address__icontains=city) |
+                    Q(title__icontains=city) |
+                    Q(city__icontains=city)
+                )
+            else:
+                residence_qs = residence_qs.filter(
+                    Q(city__icontains=city) | Q(address__icontains=city)
+                )
+        residence_spotlight = list(
+            residence_qs.order_by('-is_featured', '-created_at')[:6]
+        )
+        for prop in residence_spotlight:
+            normals = [img for img in prop.images.all() if img.image_type != 'panorama_360'][:8]
+            if not normals:
+                normals = list(prop.images.all()[:4])
+            prop.card_images = normals
+
+    listing_total = total_count
+    if show_residence_band:
+        listing_total = total_count + residence_count_all
 
     paginator = Paginator(properties, 12)
     page_number = request.GET.get('page')
@@ -145,7 +191,11 @@ def property_list(request):
         'min_price': min_price,
         'max_price': max_price,
         'PROPERTY_TYPES': Property.PROPERTY_TYPE_CHOICES,
-        'total_count': total_count,
+        'type_counts': type_counts,
+        'type_tabs': type_tabs,
+        'residence_count': type_counts.get('residence', 0),
+        'residence_spotlight': residence_spotlight,
+        'total_count': listing_total if show_residence_band else total_count,
         'city_stats': city_stats_tuples,
         'city_chips': city_chips,
         'map_markers_json': json.dumps(map_markers, ensure_ascii=False),
@@ -483,15 +533,25 @@ def tenant_dashboard(request):
     if not request.user.is_tenant:
         messages.error(request, 'Accès réservé aux locataires.')
         return redirect('properties:property_list')
-    
-    bookings = Booking.objects.filter(tenant=request.user).order_by('-created_at')
-    favorites = Favorite.objects.filter(tenant=request.user).select_related('property_obj')
-    
+
+    bookings = (
+        Booking.objects.filter(tenant=request.user)
+        .select_related('property_obj')
+        .order_by('-created_at')[:8]
+    )
+    favorites = (
+        Favorite.objects.filter(tenant=request.user)
+        .select_related('property_obj')
+        .prefetch_related('property_obj__images')
+    )
+    pending_count = Booking.objects.filter(tenant=request.user, status='pending').count()
+
     context = {
         'bookings': bookings,
         'favorites': favorites,
+        'pending_count': pending_count,
     }
-    
+
     return render(request, 'properties/tenant_dashboard.html', context)
 
 
